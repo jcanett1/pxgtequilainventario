@@ -218,67 +218,50 @@
     </div>
   </div>
 
-  <!-- Modal Agregar/Editar Proveedor -->
-  <div class="modal fade" id="addEditProviderModal" tabindex="-1" aria-labelledby="addEditProviderModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="addEditProviderModalLabel">Agregar Proveedor</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form id="providerForm">
-            <input type="hidden" id="providerId">
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="providerName" class="form-label">Nombre</label>
-                <input type="text" class="form-control" id="providerName" required>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="providerLocation" class="form-label">Ubicación</label>
-                <input type="text" class="form-control" id="providerLocation" required>
-              </div>
+ <!-- Modal Agregar/Editar Proveedor -->
+<div class="modal fade" id="addEditProviderModal" tabindex="-1" aria-labelledby="addEditProviderModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addEditProviderModalLabel">Agregar Proveedor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="providerForm">
+          <input type="hidden" id="providerId">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="providerName" class="form-label">Nombre*</label>
+              <input type="text" class="form-control" id="providerName" required>
             </div>
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="providerCommercialName" class="form-label">Nombre Comercial</label>
-                <input type="text" class="form-control" id="providerCommercialName">
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="providerEmail" class="form-label">Email</label>
-                <input type="email" class="form-control" id="providerEmail" required>
-              </div>
+            <div class="col-md-6 mb-3">
+              <label for="providerContact" class="form-label">Contacto</label>
+              <input type="text" class="form-control" id="providerContact">
             </div>
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="providerClassification" class="form-label">Clasificación</label>
-                <select class="form-select" id="providerClassification">
-                  <option value="">Seleccionar clasificación</option>
-                  <option value="electronica">Electrónica</option>
-                  <option value="abarrotes">Abarrotes</option>
-                  <option value="materiales">Materiales</option>
-                  <option value="herramientas">Herramientas</option>
-                  <option value="ropa">Ropa</option>
-                  <option value="universal">Universal</option>
-                </select>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="providerCredit" class="form-label">Crédito</label>
-                <div class="input-group">
-                  <span class="input-group-text">$</span>
-                  <input type="number" class="form-control" id="providerCredit" min="0" step="0.01">
-                </div>
-              </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="providerPhone" class="form-label">Teléfono</label>
+              <input type="text" class="form-control" id="providerPhone">
             </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-primary" id="saveProviderBtn">Guardar</button>
-        </div>
+            <div class="col-md-6 mb-3">
+              <label for="providerEmail" class="form-label">Email</label>
+              <input type="email" class="form-control" id="providerEmail">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="providerAddress" class="form-label">Dirección</label>
+            <textarea class="form-control" id="providerAddress" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="saveProviderBtn">Guardar</button>
       </div>
     </div>
   </div>
+</div>
 
   <!-- Footer -->
   <footer class="footer mt-5">
