@@ -454,60 +454,59 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
- <script id="app-script">
+<script id="app-script">
 document.addEventListener('DOMContentLoaded', function() {
   // Configura Supabase directamente
   const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3a3Zmd3JybGl6aHFkcGF4Zm1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NTIyODMsImV4cCI6MjA2NTMyODI4M30.6ryUGUVRcDtASw0s1RTnKwSA4ezn_I_oxHeuSWGmwFU'; // tu clave
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3a3Zmd3JybGl6aHFkcGF4Zm1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NTIyODMsImV4cCI6MjA2NTMyODI4M30.6ryUGUVRcDtASw0s1RTnKwSA4ezn_I_oxHeuSWGmwFU';
   
+  // Inicializa Supabase
   window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
-          
-          // Initialize tooltips
-          const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-          const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-          });
-          
-          // Initialize charts
-          initCharts();
-          
-          // Load initial data
-          cargarProductos();
-          
-          // Set up event listeners
-          document.getElementById('saveProductBtn').addEventListener('click', function() {
-            const form = document.getElementById('addProductForm');
-            if (form.checkValidity()) {
-              const producto = {
-                nombre: document.getElementById('productName').value,
-                categoria: document.getElementById('productCategory').value,
-                precio: parseFloat(document.getElementById('productPrice').value),
-                cantidad: parseInt(document.getElementById('productQuantity').value),
-                descripcion: document.getElementById('productDescription').value,
-                proveedor_id: document.getElementById('productSupplier').value || null
-              };
-              
-              guardarProducto(producto);
-              const modal = bootstrap.Modal.getInstance(document.getElementById('addProductModal'));
-              modal.hide();
-              form.reset();
-            } else {
-              form.reportValidity();
-            }
-          });
-          
-          // Additional event listeners would go here
-        })
-        .catch(error => {
-          console.error('Error loading Supabase client:', error);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudo cargar el cliente de Supabase. Por favor recargue la página.'
-          });
-        });
+  
+  // Initialize tooltips
+  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+  
+  // Initialize charts
+  initCharts();
+  
+  // Load initial data
+  cargarProductos();
+  
+  // Set up event listeners
+  document.getElementById('saveProductBtn').addEventListener('click', function() {
+    const form = document.getElementById('addProductForm');
+    if (form.checkValidity()) {
+      const producto = {
+        nombre: document.getElementById('productName').value,
+        categoria: document.getElementById('productCategory').value,
+        precio: parseFloat(document.getElementById('productPrice').value),
+        cantidad: parseInt(document.getElementById('productQuantity').value),
+        descripcion: document.getElementById('productDescription').value,
+        proveedor_id: document.getElementById('productSupplier').value || null
+      };
+      
+      guardarProducto(producto);
+      const modal = bootstrap.Modal.getInstance(document.getElementById('addProductModal'));
+      modal.hide();
+      form.reset();
+    } else {
+      form.reportValidity();
+    }
+  });
+  
+  // Manejo de errores global
+  window.addEventListener('error', function(error) {
+    console.error('Error global:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Ocurrió un error inesperado. Por favor recargue la página.'
     });
-
+  });
+});
     function initCharts() {
       // Gráfico de stock por categoría
       const ctxCategory = document.getElementById('stockByCategory').getContext('2d');
