@@ -1,29 +1,52 @@
-
-// Cambia la importación de Supabase
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Swal from 'sweetalert2'
 
-// Inicializa Supabase correctamente
-const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3a3Zmd3JybGl6aHFkcGF4Zm1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NTIyODMsImV4cCI6MjA2NTMyODI4M30.6ryUGUVRcDtASw0s1RTnKwSA4ezn_I_oxHeuSWGmwFU';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Configuración de Supabase
+const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3a3Zmd3JybGl6aHFkcGF4Zm1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NTIyODMsImV4cCI6MjA2NTMyODI4M30.6ryUGUVRcDtASw0s1RTnKwSA4ezn_I_oxHeuSWGmwFU'
+const supabase = createClient(supabaseUrl, supabaseKey)
 
+// Variables globales
+let productoEditando = null
+
+// Inicialización cuando el DOM está listo
 document.addEventListener('DOMContentLoaded', async function() {
-  // Cargar datos iniciales
-  await cargarProductos()
-  await cargarCategorias()
-  await cargarProveedores()
-  
-  // Configurar event listeners
-  document.getElementById('saveProductBtn').addEventListener('click', guardarProducto)
-  document.getElementById('addStockBtn').addEventListener('click', agregarStockExistente)
-  
-  // Inicializar tooltips
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-  tooltipTriggerList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+  try {
+    // Verificar conexión con Supabase
+    const { data, error } = await supabase
+      .from('productos')
+      .select('id')
+      .limit(1)
+      
+    if (error) throw error
+    
+    // Cargar datos iniciales
+    await Promise.all([
+      cargarProductos(),
+      cargarCategorias(),
+      cargarProveedores()
+    ])
+    
+    // Configurar event listeners
+    document.getElementById('saveProductBtn').addEventListener('click', guardarProducto)
+    document.getElementById('addStockBtn').addEventListener('click', agregarStockExistente)
+    
+    // Inicializar tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    tooltipTriggerList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+    
+    // Configurar fecha por defecto en el modal
+    document.getElementById('productEntryDate').value = new Date().toISOString().split('T')[0]
+    
+  } catch (error) {
+    console.error('Error inicial:', error)
+    mostrarError('Error al conectar con la base de datos. Por favor recargue la página.')
+  }
 })
 
-// Función para cargar productos en la tabla
+// ========== FUNCIONES PRINCIPALES ==========
+
+// Cargar productos en la tabla
 async function cargarProductos() {
   try {
     const { data: productos, error } = await supabase
@@ -33,10 +56,12 @@ async function cargarProductos() {
         nombre,
         precio,
         cantidad,
+        descripcion,
         ubicacion,
         fecha_ingreso,
-        categorias: categoria_id (nombre),
-        proveedores: proveedor_id (nombre)
+        codigo_barras,
+        categorias: categoria_id (id, nombre),
+        proveedores: proveedor_id (id, nombre)
       `)
       .order('nombre', { ascending: true })
 
@@ -44,6 +69,17 @@ async function cargarProductos() {
 
     const tbody = document.getElementById('productosTableBody')
     tbody.innerHTML = ''
+
+    if (productos.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">
+            No hay productos registrados. Agrega tu primer producto.
+          </td>
+        </tr>
+      `
+      return
+    }
 
     productos.forEach(producto => {
       const tr = document.createElement('tr')
@@ -53,19 +89,22 @@ async function cargarProductos() {
         <td>$${producto.precio.toFixed(2)}</td>
         <td>${producto.cantidad}</td>
         <td>${producto.proveedores?.nombre || 'N/A'}</td>
-        <td>${new Date(producto.fecha_ingreso).toLocaleDateString()}</td>
+        <td>${formatearFecha(producto.fecha_ingreso)}</td>
         <td>${producto.ubicacion || 'N/A'}</td>
         <td class="action-buttons">
           <button class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Editar" onclick="editarProducto(${producto.id})">
             <i class="fas fa-edit"></i>
           </button>
-          <button class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Ajustar cantidad" onclick="mostrarModalAjuste(${producto.id})">
+          <button class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Ajustar stock" 
+            onclick="mostrarModalAjuste(${producto.id}, '${producto.nombre}')">
             <i class="fas fa-plus-minus"></i>
           </button>
-          <button class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" title="Ver historial" onclick="verHistorial(${producto.id})">
+          <button class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" title="Ver historial" 
+            onclick="verHistorial(${producto.id}, '${producto.nombre}')">
             <i class="fas fa-history"></i>
           </button>
-          <button class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Eliminar" onclick="eliminarProducto(${producto.id})">
+          <button class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Eliminar" 
+            onclick="eliminarProducto(${producto.id}, '${producto.nombre.replace(/'/g, "\\'")}')">
             <i class="fas fa-trash"></i>
           </button>
         </td>
@@ -79,21 +118,17 @@ async function cargarProductos() {
     productos.forEach(producto => {
       const option = document.createElement('option')
       option.value = producto.id
-      option.textContent = producto.nombre
+      option.textContent = `${producto.nombre} (${producto.cantidad} en stock)`
       selectProductos.appendChild(option)
     })
 
   } catch (error) {
     console.error('Error cargando productos:', error)
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'No se pudieron cargar los productos. Por favor recargue la página.'
-    })
+    mostrarError('No se pudieron cargar los productos. Por favor recargue la página.')
   }
 }
 
-// Función para cargar categorías en los selects
+// Cargar categorías en los selects
 async function cargarCategorias() {
   try {
     const { data: categorias, error } = await supabase
@@ -103,22 +138,24 @@ async function cargarCategorias() {
 
     if (error) throw error
 
-    const selectCategoria = document.getElementById('productCategory')
-    selectCategoria.innerHTML = '<option value="">Seleccionar categoría</option>'
-    
-    categorias.forEach(categoria => {
-      const option = document.createElement('option')
-      option.value = categoria.id
-      option.textContent = categoria.nombre
-      selectCategoria.appendChild(option)
+    const selects = document.querySelectorAll('.select-categoria')
+    selects.forEach(select => {
+      select.innerHTML = '<option value="">Seleccionar categoría</option>'
+      categorias.forEach(categoria => {
+        const option = document.createElement('option')
+        option.value = categoria.id
+        option.textContent = categoria.nombre
+        select.appendChild(option)
+      })
     })
 
   } catch (error) {
     console.error('Error cargando categorías:', error)
+    mostrarError('No se pudieron cargar las categorías', 'error')
   }
 }
 
-// Función para cargar proveedores en los selects
+// Cargar proveedores en los selects
 async function cargarProveedores() {
   try {
     const { data: proveedores, error } = await supabase
@@ -128,85 +165,111 @@ async function cargarProveedores() {
 
     if (error) throw error
 
-    const selectProveedor = document.getElementById('productSupplier')
-    selectProveedor.innerHTML = '<option value="">Seleccionar proveedor</option>'
-    
-    proveedores.forEach(proveedor => {
-      const option = document.createElement('option')
-      option.value = proveedor.id
-      option.textContent = proveedor.nombre
-      selectProveedor.appendChild(option)
+    const selects = document.querySelectorAll('.select-proveedor')
+    selects.forEach(select => {
+      select.innerHTML = '<option value="">Seleccionar proveedor</option>'
+      proveedores.forEach(proveedor => {
+        const option = document.createElement('option')
+        option.value = proveedor.id
+        option.textContent = proveedor.nombre
+        select.appendChild(option)
+      })
     })
 
   } catch (error) {
     console.error('Error cargando proveedores:', error)
+    mostrarError('No se pudieron cargar los proveedores', 'error')
   }
 }
 
-// Función para guardar un nuevo producto
+// Guardar producto (nuevo o edición)
 async function guardarProducto() {
   const form = document.getElementById('addProductForm')
+  
   if (!form.checkValidity()) {
-    form.reportValidity()
+    form.classList.add('was-validated')
     return
   }
 
   try {
     const producto = {
-      nombre: document.getElementById('productName').value,
-      categoria_id: document.getElementById('productCategory').value,
+      nombre: document.getElementById('productName').value.trim(),
+      categoria_id: document.getElementById('productCategory').value || null,
       precio: parseFloat(document.getElementById('productPrice').value),
-      cantidad: parseInt(document.getElementById('productQuantity').value),
-      descripcion: document.getElementById('productDescription').value,
+      cantidad: parseInt(document.getElementById('productQuantity').value) || 0,
+      descripcion: document.getElementById('productDescription').value.trim(),
       proveedor_id: document.getElementById('productSupplier').value || null,
-      ubicacion: document.getElementById('productLocation').value,
+      ubicacion: document.getElementById('productLocation').value.trim(),
       fecha_ingreso: document.getElementById('productEntryDate').value
     }
 
-    const { error } = await supabase
-      .from('productos')
-      .insert([producto])
+    // Validaciones adicionales
+    if (producto.precio <= 0) throw new Error('El precio debe ser mayor que cero')
+    if (producto.cantidad < 0) throw new Error('La cantidad no puede ser negativa')
+    if (!producto.nombre) throw new Error('El nombre del producto es requerido')
 
-    if (error) throw error
+    const loading = mostrarLoading('Guardando producto...')
 
-    Swal.fire({
-      icon: 'success',
-      title: 'Éxito',
-      text: 'Producto guardado correctamente'
-    })
+    let result
+    if (productoEditando) {
+      // Editar producto existente
+      const { data, error } = await supabase
+        .from('productos')
+        .update(producto)
+        .eq('id', productoEditando.id)
+        .select()
+      
+      if (error) throw error
+      result = data[0]
+    } else {
+      // Crear nuevo producto
+      const { data, error } = await supabase
+        .from('productos')
+        .insert([producto])
+        .select()
+      
+      if (error) throw error
+      result = data[0]
+    }
 
+    loading.close()
+    
+    mostrarExito(`Producto "${result.nombre}" ${productoEditando ? 'actualizado' : 'guardado'} correctamente`)
+    
     // Cerrar modal y recargar datos
     const modal = bootstrap.Modal.getInstance(document.getElementById('addProductModal'))
     modal.hide()
-    form.reset()
+    resetFormularioProducto()
     await cargarProductos()
 
   } catch (error) {
     console.error('Error guardando producto:', error)
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'No se pudo guardar el producto. Por favor intente de nuevo.'
-    })
+    mostrarError(obtenerMensajeError(error), 'Error al guardar')
   }
 }
 
-// Función para agregar stock a producto existente
+// Agregar stock a producto existente
 async function agregarStockExistente() {
   const form = document.getElementById('addStockForm')
+  
   if (!form.checkValidity()) {
-    form.reportValidity()
+    form.classList.add('was-validated')
     return
   }
 
   try {
     const productoId = document.getElementById('existingProduct').value
     const cantidad = parseInt(document.getElementById('additionalStock').value)
+    
+    if (!productoId) throw new Error('Debe seleccionar un producto')
+    if (cantidad <= 0) throw new Error('La cantidad debe ser mayor que cero')
+
+    const loading = mostrarLoading('Actualizando stock...')
 
     // Obtener cantidad actual
     const { data: producto, error: fetchError } = await supabase
       .from('productos')
-      .select('cantidad')
+      .select('cantidad, nombre')
       .eq('id', productoId)
       .single()
 
@@ -223,29 +286,26 @@ async function agregarStockExistente() {
     // Registrar movimiento
     await registrarMovimiento(productoId, 'entrada', cantidad, 'Ajuste manual de inventario')
 
-    Swal.fire({
-      icon: 'success',
-      title: 'Éxito',
-      text: 'Stock actualizado correctamente'
-    })
-
+    loading.close()
+    
+    mostrarExito(`Se agregaron ${cantidad} unidades al producto "${producto.nombre}"`)
+    
     // Cerrar modal y recargar datos
     const modal = bootstrap.Modal.getInstance(document.getElementById('addExistingModal'))
     modal.hide()
     form.reset()
+    form.classList.remove('was-validated')
     await cargarProductos()
 
   } catch (error) {
     console.error('Error actualizando stock:', error)
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'No se pudo actualizar el stock. Por favor intente de nuevo.'
-    })
+    mostrarError(obtenerMensajeError(error), 'Error al actualizar stock')
   }
 }
 
-// Función auxiliar para registrar movimientos
+// ========== FUNCIONES SECUNDARIAS ==========
+
+// Registrar movimiento de inventario
 async function registrarMovimiento(productoId, tipo, cantidad, motivo) {
   try {
     const { error } = await supabase
@@ -254,17 +314,79 @@ async function registrarMovimiento(productoId, tipo, cantidad, motivo) {
         producto_id: productoId,
         tipo,
         cantidad,
-        motivo
+        motivo,
+        usuario_id: (await supabase.auth.getUser()).data.user?.id || null
       }])
 
     if (error) throw error
 
   } catch (error) {
     console.error('Error registrando movimiento:', error)
+    throw new Error('No se pudo registrar el movimiento')
   }
 }
 
-// Funciones para acciones adicionales (editar, eliminar, etc.)
+// Resetear formulario de producto
+function resetFormularioProducto() {
+  const form = document.getElementById('addProductForm')
+  form.reset()
+  form.classList.remove('was-validated')
+  productoEditando = null
+  document.getElementById('addProductModalLabel').textContent = 'Agregar Nuevo Producto'
+  document.getElementById('saveProductBtn').textContent = 'Guardar Producto'
+  document.getElementById('productEntryDate').value = new Date().toISOString().split('T')[0]
+}
+
+// Formatear fecha para visualización
+function formatearFecha(fecha) {
+  if (!fecha) return 'N/A'
+  return new Date(fecha).toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
+// Mostrar loading
+function mostrarLoading(titulo) {
+  return Swal.fire({
+    title: titulo,
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading()
+  })
+}
+
+// Mostrar mensaje de éxito
+function mostrarExito(mensaje) {
+  return Swal.fire({
+    icon: 'success',
+    title: 'Éxito',
+    text: mensaje,
+    timer: 2000,
+    showConfirmButton: false
+  })
+}
+
+// Mostrar mensaje de error
+function mostrarError(mensaje, titulo = 'Error') {
+  return Swal.fire({
+    icon: 'error',
+    title: titulo,
+    text: mensaje
+  })
+}
+
+// Obtener mensaje de error amigable
+function obtenerMensajeError(error) {
+  if (error.message.includes('JWT expired')) return 'La sesión ha expirado. Recargue la página.'
+  if (error.message.includes('permission denied')) return 'No tiene permisos para esta acción.'
+  if (error.message.includes('duplicate key')) return 'Ya existe un producto con esos datos.'
+  return error.message || 'Ocurrió un error inesperado. Intente nuevamente.'
+}
+
+// ========== FUNCIONES GLOBALES (window) ==========
+
+// Editar producto
 window.editarProducto = async function(id) {
   try {
     const { data: producto, error } = await supabase
@@ -275,28 +397,40 @@ window.editarProducto = async function(id) {
 
     if (error) throw error
 
-    // Llenar formulario de edición (podrías crear un modal similar al de agregar)
-    console.log('Editar producto:', producto)
-    // Aquí implementarías la lógica para mostrar un modal de edición
+    // Llenar formulario
+    document.getElementById('productName').value = producto.nombre
+    document.getElementById('productCategory').value = producto.categoria_id || ''
+    document.getElementById('productPrice').value = producto.precio
+    document.getElementById('productQuantity').value = producto.cantidad
+    document.getElementById('productDescription').value = producto.descripcion || ''
+    document.getElementById('productSupplier').value = producto.proveedor_id || ''
+    document.getElementById('productLocation').value = producto.ubicacion || ''
+    document.getElementById('productEntryDate').value = producto.fecha_ingreso
+
+    // Configurar para edición
+    productoEditando = producto
+    document.getElementById('addProductModalLabel').textContent = 'Editar Producto'
+    document.getElementById('saveProductBtn').textContent = 'Actualizar Producto'
+
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('addProductModal'))
+    modal.show()
 
   } catch (error) {
     console.error('Error obteniendo producto:', error)
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'No se pudo cargar el producto para editar.'
-    })
+    mostrarError('No se pudo cargar el producto para editar')
   }
 }
 
-window.eliminarProducto = async function(id) {
+// Eliminar producto
+window.eliminarProducto = async function(id, nombre) {
   try {
     const result = await Swal.fire({
-      title: '¿Estás seguro?',
-      text: "¡No podrás revertir esto!",
+      title: '¿Eliminar producto?',
+      html: `¿Estás seguro de eliminar <strong>${nombre}</strong>?<br>Esta acción no se puede deshacer.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#8b0000',
+      confirmButtonColor: '#dc3545',
       cancelButtonColor: '#6c757d',
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar'
@@ -304,56 +438,106 @@ window.eliminarProducto = async function(id) {
 
     if (!result.isConfirmed) return
 
+    const loading = mostrarLoading('Eliminando producto...')
+
     const { error } = await supabase
       .from('productos')
       .delete()
       .eq('id', id)
 
+    loading.close()
+
     if (error) throw error
 
-    Swal.fire({
-      icon: 'success',
-      title: 'Eliminado',
-      text: 'El producto ha sido eliminado.'
-    })
-
+    mostrarExito(`Producto "${nombre}" eliminado correctamente`)
     await cargarProductos()
 
   } catch (error) {
     console.error('Error eliminando producto:', error)
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'No se pudo eliminar el producto.'
-    })
+    mostrarError('No se pudo eliminar el producto')
   }
 }
 
-window.mostrarModalAjuste = function(id) {
-  // Implementar lógica para mostrar un modal de ajuste de cantidad
-  console.log('Ajustar cantidad para producto ID:', id)
+// Mostrar modal para ajustar stock
+window.mostrarModalAjuste = function(id, nombre) {
+  document.getElementById('existingProduct').value = id
+  document.getElementById('addExistingModalLabel').textContent = `Ajustar Stock: ${nombre}`
+  const modal = new bootstrap.Modal(document.getElementById('addExistingModal'))
+  modal.show()
 }
 
-window.verHistorial = async function(id) {
+// Ver historial de movimientos
+window.verHistorial = async function(id, nombre) {
   try {
+    const loading = mostrarLoading('Cargando historial...')
+
     const { data: movimientos, error } = await supabase
       .from('movimientos')
-      .select('*')
+      .select(`
+        *,
+        usuarios: usuario_id (email)
+      `)
       .eq('producto_id', id)
       .order('created_at', { ascending: false })
 
+    loading.close()
+
     if (error) throw error
 
-    // Mostrar historial en un modal o ventana
-    console.log('Historial de movimientos:', movimientos)
-    // Aquí implementarías la lógica para mostrar el historial
+    if (movimientos.length === 0) {
+      return Swal.fire({
+        title: `Historial: ${nombre}`,
+        html: '<p class="text-muted">No hay movimientos registrados para este producto.</p>',
+        confirmButtonText: 'Cerrar'
+      })
+    }
+
+    let html = `
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Cantidad</th>
+              <th>Motivo</th>
+              <th>Usuario</th>
+            </tr>
+          </thead>
+          <tbody>
+    `
+
+    movimientos.forEach(mov => {
+      html += `
+        <tr>
+          <td>${formatearFecha(mov.created_at)}</td>
+          <td>
+            <span class="badge ${mov.tipo === 'entrada' ? 'bg-success' : 'bg-danger'}">
+              ${mov.tipo === 'entrada' ? 'Entrada' : 'Salida'}
+            </span>
+          </td>
+          <td>${mov.cantidad}</td>
+          <td>${mov.motivo}</td>
+          <td>${mov.usuarios?.email || 'Sistema'}</td>
+        </tr>
+      `
+    })
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `
+
+    Swal.fire({
+      title: `Historial: ${nombre}`,
+      html,
+      width: '800px',
+      confirmButtonText: 'Cerrar'
+    })
 
   } catch (error) {
     console.error('Error obteniendo historial:', error)
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'No se pudo obtener el historial del producto.'
-    })
+    mostrarError('No se pudo obtener el historial del producto')
   }
 }
