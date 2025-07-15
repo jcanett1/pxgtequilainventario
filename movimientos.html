@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script type="importmap">
+    {
+      "imports": {
+        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js",
+        "chart.js": "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js",
+        "sweetalert2": "https://cdn.jsdelivr.net/npm/sweetalert2@11/+esm"
+      }
+    }
+  </script>
+  <meta http-equiv="Access-Control-Allow-Origin" content="*">
+  <title>Movimientos - PXG Tequila</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style id="app-style">
+    :root {
+      --primary-color: #8b0000;
+      --secondary-color: #f8f9fa;
+      --accent-color: #ffb347;
+      --dark-accent: #996633;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    
+    .navbar {
+      background-color: var(--primary-color) !important;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .navbar-brand {
+      font-weight: bold;
+      font-size: 1.4rem;
+    }
+    
+    .navbar-brand img {
+      margin-right: 10px;
+    }
+    
+    .card {
+      border-radius: 10px;
+      border: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease;
+      margin-bottom: 1.5rem;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .card-header {
+      background-color: #fff;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      font-weight: 600;
+      border-top-left-radius: 10px !important;
+      border-top-right-radius: 10px !important;
+    }
+    
+    .stats-card {
+      text-align: center;
+      padding: 1.5rem;
+    }
+    
+    .stats-card i {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: var(--primary-color);
+    }
+    
+    .stats-value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stats-label {
+      color: #666;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    
+    .btn-primary:hover {
+      background-color: #750000;
+      border-color: #750000;
+    }
+    
+    .table {
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .table thead {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .table thead th {
+      border-bottom: none;
+      padding: 15px;
+      font-weight: 600;
+    }
+    
+    .action-buttons .btn {
+      padding: 0.25rem 0.5rem;
+      margin: 0 0.15rem;
+    }
+    
+    .welcome-section {
+      background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://cdn.pixabay.com/photo/2018/01/09/11/04/tequila-3071275_1280.jpg');
+      background-size: cover;
+      background-position: center;
+      color: white;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+      border-radius: 10px;
+      margin-bottom: 2rem;
+      padding: 3rem;
+    }
+    
+    .modal-header {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .footer {
+      background-color: #2c2c2c;
+      color: #f8f9fa;
+      padding: 2rem 0;
+      margin-top: 3rem;
+    }
+
+    @media (max-width: 768px) {
+      .stats-card {
+        margin-bottom: 1rem;
+      }
+      
+      .welcome-section {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">
+        <img src="https://cdn.pixabay.com/photo/2014/04/03/00/42/tequila-309425_640.png" alt="PXG Tequila Logo" width="30" height="30" class="d-inline-block align-text-top">
+        PXG Tequila Inventarios
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="index.html"><i class="fas fa-home"></i> Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="productos.html"><i class="fas fa-box"></i> Productos</a></li>
+          <li class="nav-item"><a class="nav-link active" href="movimientos.html"><i class="fas fa-exchange-alt"></i> Movimientos</a></li>
+          <li class="nav-item"><a class="nav-link" href="stock.html"><i class="fas fa-warehouse"></i> Stock</a></li>
+          <li class="nav-item"><a class="nav-link" href="proveedores.html"><i class="fas fa-truck"></i> Proveedores</a></li>
+          <li class="nav-item"><a class="nav-link" href="reportes.html"><i class="fas fa-chart-bar"></i> Reportes</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Movimientos</h5>
+            <div>
+              <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMovementModal">
+                <i class="fas fa-plus"></i> Registrar Movimiento
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <!-- Tab navigation -->
+            <ul class="nav nav-tabs mb-3" id="movimientosTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="salida-tab" data-bs-toggle="tab" data-bs-target="#salida" type="button" role="tab" aria-controls="salida" aria-selected="true">
+                  <i class="fas fa-arrow-right me-1"></i> Salida de Productos
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab" aria-controls="historial" aria-selected="false">
+                  <i class="fas fa-history me-1"></i> Historial de Movimientos
+                </button>
+              </li>
+            </ul>
+            
+            <!-- Tab content -->
+            <div class="tab-content" id="movimientosTabsContent">
+              <!-- Salida de Productos Tab -->
+              <div class="tab-pane fade show active" id="salida" role="tabpanel" aria-labelledby="salida-tab">
+                <div class="card mb-4">
+                  <div class="card-header bg-light">
+                    <h6 class="mb-0">Registrar Salida de Productos</h6>
+                  </div>
+                  <div class="card-body">
+                    <form id="salidaForm">
+                      <div class="row">
+                        <div class="col-md-6 mb-3">
+                          <label for="salidaProducto" class="form-label">Producto</label>
+                          <select class="form-select" id="salidaProducto" required>
+                            <option value="">Seleccionar producto</option>
+                            <!-- Opciones se cargarán dinámicamente -->
+                          </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                          <label for="salidaFecha" class="form-label">Fecha de salida</label>
+                          <input type="date" class="form-control" id="salidaFecha" required>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-6 mb-3">
+                          <label for="salidaCantidad" class="form-label">Cantidad</label>
+                          <input type="number" class="form-control" id="salidaCantidad" required min="1">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                          <label for="salidaDestinatario" class="form-label">Persona destinataria</label>
+                          <select class="form-select" id="salidaDestinatario" required>
+                            <option value="">Seleccionar destinatario</option>
+                            <option value="Alan Ramos">Alan Ramos</option>
+                            <option value="Otton Morales">Otton Morales</option>
+                            <option value="Cinthya Leon">Cinthya Leon</option>
+                            <option value="Dennise Garcia">Dennise Garcia</option>
+                            <option value="Milagros Navarro">Milagros Navarro</option>
+                            <option value="Daina Sanchez">Daina Sanchez</option>
+                            <option value="Alejandra Lopez">Alejandra Lopez</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-12 mb-3">
+                          <label for="salidaMotivo" class="form-label">Motivo de salida</label>
+                          <input type="text" class="form-control" id="salidaMotivo" required>
+                        </div>
+                      </div>
+                      <div class="d-grid gap-2 col-md-6 mx-auto">
+                        <button type="button" class="btn btn-primary" id="registrarSalidaBtn">
+                          <i class="fas fa-check-circle me-1"></i> Registrar Salida
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Historial de Movimientos Tab -->
+              <div class="tab-pane fade" id="historial" role="tabpanel" aria-labelledby="historial-tab">
+                <div class="table-responsive">
+                  <table class="table table-striped" id="movementsTable">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Motivo</th>
+                        <th>Usuario</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="movementsTableBody">
+                      <!-- La tabla se poblará dinámicamente con datos de Supabase -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Registrar Movimiento -->
+  <div class="modal fade" id="addMovementModal" tabindex="-1" aria-labelledby="addMovementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addMovementModalLabel">Registrar Movimiento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="movementForm">
+            <input type="hidden" id="movementId">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="movementProduct" class="form-label">Producto</label>
+                <select class="form-select" id="movementProduct" required>
+                  <option value="">Seleccionar producto</option>
+                  <!-- Opciones se cargarán dinámicamente -->
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="movementType" class="form-label">Tipo</label>
+                <select class="form-select" id="movementType" required>
+                  <option value="">Seleccionar tipo</option>
+                  <option value="entrada">Entrada</option>
+                  <option value="salida">Salida</option>
+                  <option value="ajuste">Ajuste</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="movementQuantity" class="form-label">Cantidad</label>
+                <input type="number" class="form-control" id="movementQuantity" required min="1">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="movementReason" class="form-label">Motivo</label>
+                <input type="text" class="form-control" id="movementReason" required>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="saveMovementBtn">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Editar Movimiento -->
+  <div class="modal fade" id="editMovementModal" tabindex="-1" aria-labelledby="editMovementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editMovementModalLabel">Editar Movimiento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editMovementForm">
+            <input type="hidden" id="editMovementId">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="editMovementProduct" class="form-label">Producto</label>
+                <select class="form-select" id="editMovementProduct" required>
+                  <option value="">Seleccionar producto</option>
+                  <!-- Opciones se cargarán dinámicamente -->
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="editMovementType" class="form-label">Tipo</label>
+                <select class="form-select" id="editMovementType" required>
+                  <option value="">Seleccionar tipo</option>
+                  <option value="entrada">Entrada</option>
+                  <option value="salida">Salida</option>
+                  <option value="ajuste">Ajuste</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="editMovementQuantity" class="form-label">Cantidad</label>
+                <input type="number" class="form-control" id="editMovementQuantity" required min="1">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="editMovementReason" class="form-label">Motivo</label>
+                <input type="text" class="form-control" id="editMovementReason" required>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="updateMovementBtn">Actualizar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Registrar Devolución -->
+  <div class="modal fade" id="devolucionModal" tabindex="-1" aria-labelledby="devolucionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title" id="devolucionModalLabel">Registrar Devolución</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="devolucionForm">
+            <input type="hidden" id="devolucionMovimientoId">
+            <div class="mb-3">
+              <label for="devolucionProducto" class="form-label">Producto</label>
+              <input type="text" class="form-control" id="devolucionProducto" readonly>
+            </div>
+            <div class="mb-3">
+              <label for="devolucionCantidadOriginal" class="form-label">Cantidad Original</label>
+              <input type="number" class="form-control" id="devolucionCantidadOriginal" readonly>
+            </div>
+            <div class="mb-3">
+              <label for="devolucionCantidad" class="form-label">Cantidad a Devolver</label>
+              <input type="number" class="form-control" id="devolucionCantidad" required min="1">
+            </div>
+            <div class="mb-3">
+              <label for="devolucionMotivo" class="form-label">Motivo de Devolución</label>
+              <input type="text" class="form-control" id="devolucionMotivo" required>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-info" id="confirmarDevolucionBtn">Confirmar Devolución</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer mt-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 mb-4 mb-md-0">
+          <h5>PXG Tequila</h5>
+          <p>Sistema de control de inventarios para gestionar eficientemente tus productos.</p>
+        </div>
+        <div class="col-md-4 mb-4 mb-md-0">
+          <h5>Enlaces Rápidos</h5>
+          <ul class="list-unstyled">
+            <li><a href="javascript:void(0)" class="text-white">Dashboard</a></li>
+            <li><a href="javascript:void(0)" class="text-white">Productos</a></li>
+            <li><a href="javascript:void(0)" class="text-white">Movimientos</a></li>
+            <li><a href="javascript:void(0)" class="text-white">Proveedores</a></li>
+          </ul>
+        </div>
+        <div class="col-md-4">
+          <h5>Contacto</h5>
+          <ul class="list-unstyled">
+            <li><i class="fas fa-map-marker-alt me-2"></i> Jalisco, México</li>
+            <li><i class="fas fa-phone me-2"></i> (33) 1234-5678</li>
+            <li><i class="fas fa-envelope me-2"></i> contacto@pxgtequila.com</li>
+          </ul>
+        </div>
+      </div>
+      <hr class="mt-4 mb-3" style="border-color: rgba(255,255,255,0.1);">
+      <div class="text-center">
+        <p class="small">© 2025 PXG Tequila. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="./movimientos.js"></script>
+</body>
+</html>
