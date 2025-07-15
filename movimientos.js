@@ -165,90 +165,81 @@ async function cargarMovimientos() {
 
 // Función principal para registrar salidas
 async function registrarSalida() {
-  const form = document.getElementById('salidaForm')
+  const form = document.getElementById('salidaForm');
   
   try {
-    // Validar formulario
     if (!form.checkValidity()) {
-      form.classList.add('was-validated')
-      return
+      form.classList.add('was-validated');
+      return;
     }
     
-    // Obtener valores del formulario
-    const productoId = document.getElementById('salidaProducto').value
-    const cantidad = parseInt(document.getElementById('salidaCantidad').value)
-    const destinatario = document.getElementById('salidaDestinatario').value.trim()
-    const motivo = document.getElementById('salidaMotivo').value.trim()
-    const fecha = document.getElementById('salidaFecha').value
-    
-    // Validaciones adicionales
-    if (cantidad <= 0) throw new Error('La cantidad debe ser mayor que cero')
-    if (!destinatario) throw new Error('El destinatario es requerido')
-    
-    // Mostrar carga
+    const productoId = document.getElementById('salidaProducto').value;
+    const cantidad = parseInt(document.getElementById('salidaCantidad').value);
+    const destinatario = document.getElementById('salidaDestinatario').value.trim();
+    const motivo = document.getElementById('salidaMotivo').value.trim();
+    const fecha = document.getElementById('salidaFecha').value;
+
+    // Validaciones
+    if (cantidad <= 0) throw new Error('La cantidad debe ser mayor que cero');
+    if (!destinatario) throw new Error('El destinatario es requerido');
+
     const loading = Swal.fire({
       title: 'Registrando salida...',
       allowOutsideClick: false,
       didOpen: () => Swal.showLoading()
-    })
-    
-    // Verificar stock disponible
+    });
+
+    // Verificar stock
     const { data: producto, error: stockError } = await supabase
       .from('productos')
       .select('cantidad')
       .eq('id', productoId)
-      .single()
+      .single();
     
-    if (stockError) throw stockError
+    if (stockError) throw stockError;
     if (producto.cantidad < cantidad) {
-      throw new Error(`Stock insuficiente. Disponible: ${producto.cantidad}`)
+      throw new Error(`Stock insuficiente. Disponible: ${producto.cantidad}`);
     }
-    
-    // Obtener usuario actual (si está autenticado)
-    const { data: { user } } = await supabase.auth.getUser()
-    const usuarioId = user?.id || null
-    
-    // Registrar el movimiento
+
+    // Obtener usuario actual (maneja tanto autenticado como anónimo)
+    const { data: { user } } = await supabase.auth.getUser();
+    const movimientoData = {
+      producto_id: productoId,
+      tipo: 'salida',
+      cantidad: cantidad,
+      motivo: motivo,
+      destinatario: destinatario,
+      created_at: fecha || new Date().toISOString(),
+      usuario_id: user?.id || null
+    };
+
+    // Insertar movimiento
     const { error: movError } = await supabase
       .from('movimientos')
-      .insert([{
-        producto_id: productoId,
-        tipo: 'salida',
-        cantidad: cantidad,
-        motivo: motivo,
-        destinatario: destinatario,
-        usuario_id: usuarioId,
-        created_at: fecha || new Date().toISOString()
-      }])
+      .insert([movimientoData]);
     
-    if (movError) throw movError
-    
-    // Actualizar stock del producto
+    if (movError) throw movError;
+
+    // Actualizar stock
     const { error: updateError } = await supabase
       .from('productos')
       .update({ cantidad: producto.cantidad - cantidad })
-      .eq('id', productoId)
+      .eq('id', productoId);
     
-    if (updateError) throw updateError
+    if (updateError) throw updateError;
+
+    loading.close();
+    mostrarAlerta('Salida registrada correctamente', 'success');
     
-    // Éxito
-    loading.close()
-    mostrarAlerta('Salida registrada correctamente', 'success')
+    form.reset();
+    form.classList.remove('was-validated');
+    document.getElementById('salidaFecha').valueAsDate = new Date();
     
-    // Resetear formulario
-    form.reset()
-    form.classList.remove('was-validated')
-    document.getElementById('salidaFecha').valueAsDate = new Date()
-    
-    // Recargar datos
-    await cargarMovimientos()
-    
-    // Disparar evento para actualizar otras páginas
-    const event = new CustomEvent('stockUpdated')
-    document.dispatchEvent(event)
+    await cargarMovimientos();
+    document.dispatchEvent(new CustomEvent('stockUpdated'));
     
   } catch (error) {
-    console.error('Error registrando salida:', error)
-    mostrarAlerta(error.message || 'Error al registrar salida', 'error')
+    console.error('Error registrando salida:', error);
+    mostrarAlerta(error.message || 'Error al registrar salida', 'error');
   }
 }
