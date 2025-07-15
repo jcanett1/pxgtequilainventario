@@ -7,18 +7,15 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 document.addEventListener('DOMContentLoaded', async function() {
-  // Cargar proveedores al iniciar
   await cargarProveedores()
-  
-  // Configurar event listeners
   document.getElementById('saveProviderBtn').addEventListener('click', guardarProveedor)
   
-  // Inicializar tooltips
+  // Tooltips
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
   tooltipTriggerList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 })
 
-// Función para cargar proveedores en la tabla
+// Cargar proveedores
 async function cargarProveedores() {
   try {
     const { data: proveedores, error } = await supabase
@@ -36,11 +33,11 @@ async function cargarProveedores() {
       tr.innerHTML = `
         <td>${proveedor.id}</td>
         <td>${proveedor.nombre}</td>
-        <td>${proveedor.ubicacion || 'N/A'}</td>
-        <td>${proveedor.nombre_comercial || 'N/A'}</td>
+        <td>${proveedor.contacto || 'N/A'}</td>
+        <td>${proveedor.telefono || 'N/A'}</td>
         <td>${proveedor.email || 'N/A'}</td>
-        <td>${proveedor.clasificacion || 'N/A'}</td>
-        <td>$${proveedor.credito?.toFixed(2) || '0.00'}</td>
+        <td>${proveedor.direccion ? proveedor.direccion.substring(0, 30) + (proveedor.direccion.length > 30 ? '...' : '') : 'N/A'}</td>
+        <td>${new Date(proveedor.created_at).toLocaleDateString()}</td>
         <td class="action-buttons">
           <button class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Editar" onclick="editarProveedor(${proveedor.id})">
             <i class="fas fa-edit"></i>
@@ -63,7 +60,7 @@ async function cargarProveedores() {
   }
 }
 
-// Función para guardar/actualizar proveedor
+// Guardar o actualizar proveedor
 async function guardarProveedor() {
   const form = document.getElementById('providerForm')
   if (!form.checkValidity()) {
@@ -74,34 +71,35 @@ async function guardarProveedor() {
   try {
     const proveedor = {
       nombre: document.getElementById('providerName').value,
-      ubicacion: document.getElementById('providerLocation').value,
-      nombre_comercial: document.getElementById('providerCommercialName').value,
-      email: document.getElementById('providerEmail').value,
-      clasificacion: document.getElementById('providerClassification').value,
-      credito: parseFloat(document.getElementById('providerCredit').value) || 0
+      contacto: document.getElementById('providerContact').value || null,
+      telefono: document.getElementById('providerPhone').value || null,
+      email: document.getElementById('providerEmail').value || null,
+      direccion: document.getElementById('providerAddress').value || null
     }
 
     const providerId = document.getElementById('providerId').value
     let operation
 
     if (providerId) {
-      // Actualizar proveedor existente
-      const { error } = await supabase
+      // Actualización
+      const { data, error: updateError } = await supabase
         .from('proveedores')
         .update(proveedor)
         .eq('id', providerId)
+        .select()
       
+      if (updateError) throw updateError
       operation = 'actualizado'
     } else {
-      // Crear nuevo proveedor
-      const { error } = await supabase
+      // Inserción
+      const { data, error: insertError } = await supabase
         .from('proveedores')
         .insert([proveedor])
+        .select()
       
+      if (insertError) throw insertError
       operation = 'agregado'
     }
-
-    if (error) throw error
 
     Swal.fire({
       icon: 'success',
@@ -109,7 +107,6 @@ async function guardarProveedor() {
       text: `Proveedor ${operation} correctamente`
     })
 
-    // Cerrar modal y recargar datos
     const modal = bootstrap.Modal.getInstance(document.getElementById('addEditProviderModal'))
     modal.hide()
     form.reset()
@@ -120,7 +117,7 @@ async function guardarProveedor() {
     Swal.fire({
       icon: 'error',
       title: 'Error',
-      text: 'No se pudo guardar el proveedor. Por favor intente de nuevo.'
+      text: error.message || 'No se pudo guardar el proveedor. Por favor intente de nuevo.'
     })
   }
 }
@@ -139,11 +136,10 @@ window.editarProveedor = async function(id) {
     // Llenar formulario con datos del proveedor
     document.getElementById('providerId').value = proveedor.id
     document.getElementById('providerName').value = proveedor.nombre
-    document.getElementById('providerLocation').value = proveedor.ubicacion || ''
-    document.getElementById('providerCommercialName').value = proveedor.nombre_comercial || ''
+    document.getElementById('providerContact').value = proveedor.contacto || ''
+    document.getElementById('providerPhone').value = proveedor.telefono || ''
     document.getElementById('providerEmail').value = proveedor.email || ''
-    document.getElementById('providerClassification').value = proveedor.clasificacion || ''
-    document.getElementById('providerCredit').value = proveedor.credito || 0
+    document.getElementById('providerAddress').value = proveedor.direccion || ''
     
     // Actualizar título del modal
     document.getElementById('addEditProviderModalLabel').textContent = 'Editar Proveedor'
