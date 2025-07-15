@@ -1,11 +1,12 @@
 
+// Cambia la importación de Supabase
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Swal from 'sweetalert2'
 
-// Inicializar Supabase aquí mismo
+// Inicializa Supabase correctamente
 const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3a3Zmd3JybGl6aHFkcGF4Zm1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NTIyODMsImV4cCI6MjA2NTMyODI4M30.6ryUGUVRcDtASw0s1RTnKwSA4ezn_I_oxHeuSWGmwFU';
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 document.addEventListener('DOMContentLoaded', async function() {
   // Cargar datos iniciales
