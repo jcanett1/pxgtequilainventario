@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from '@supabase/supabase-js'
 import Swal from 'sweetalert2'
 
 // Configuración de Supabase
@@ -12,15 +12,14 @@ let proveedorEditando = null
 // Inicialización cuando el DOM está listo
 document.addEventListener('DOMContentLoaded', async function() {
   try {
-    // Verificar sesión activa
-    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    // Verificar conexión con Supabase
+    const { error: testError } = await supabase
+      .from('proveedores')
+      .select('id')
+      .limit(1)
+      
+    if (testError) throw testError
     
-    if (authError || !session) {
-      // Si no hay sesión, usar autenticación anónima
-      const { error: anonError } = await supabase.auth.signInAnonymously()
-      if (anonError) throw anonError
-    }
-
     // Cargar datos iniciales
     await cargarProveedores()
     
@@ -49,13 +48,13 @@ async function cargarProveedores() {
 
     if (error) throw error
 
-    const tbody = document.getElementById('proveedoresTableBody')
+    const tbody = document.getElementById('providersTableBody')
     tbody.innerHTML = ''
 
     if (proveedores.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" class="text-center text-muted py-4">
+          <td colspan="8" class="text-center text-muted py-4">
             No hay proveedores registrados. Agrega tu primer proveedor.
           </td>
         </tr>
@@ -66,18 +65,20 @@ async function cargarProveedores() {
     proveedores.forEach(proveedor => {
       const tr = document.createElement('tr')
       tr.innerHTML = `
+        <td>${proveedor.id}</td>
         <td>${proveedor.nombre}</td>
         <td>${proveedor.contacto || 'N/A'}</td>
         <td>${proveedor.telefono || 'N/A'}</td>
         <td>${proveedor.email || 'N/A'}</td>
         <td>${proveedor.direccion || 'N/A'}</td>
-        <td class="action-buttons">
-          <button class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Editar" 
+        <td>${formatearFecha(proveedor.created_at)}</td>
+        <td class="text-nowrap">
+          <button class="btn btn-sm btn-primary me-1" 
             onclick="editarProveedor(${proveedor.id})">
             <i class="fas fa-edit"></i>
           </button>
-          <button class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Eliminar" 
-            onclick="eliminarProveedor(${proveedor.id}, '${proveedor.nombre.replace(/'/g, "\\'")}')">
+          <button class="btn btn-sm btn-danger" 
+            onclick="eliminarProveedor(${proveedor.id}, '${escapeHtml(proveedor.nombre)}')">
             <i class="fas fa-trash"></i>
           </button>
         </td>
@@ -106,13 +107,14 @@ async function guardarProveedor() {
       contacto: document.getElementById('providerContact').value.trim() || null,
       telefono: document.getElementById('providerPhone').value.trim() || null,
       email: document.getElementById('providerEmail').value.trim() || null,
-      direccion: document.getElementById('providerAddress').value.trim() || null
+      direccion: document.getElementById('providerAddress').value.trim() || null,
+      updated_at: new Date().toISOString()
     }
 
     // Validaciones adicionales
     if (!proveedor.nombre) throw new Error('El nombre del proveedor es requerido')
-    if (proveedor.email && !/^\S+@\S+\.\S+$/.test(proveedor.email)) {
-      throw new Error('El email no tiene un formato válido')
+    if (proveedor.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(proveedor.email)) {
+      throw new Error('Por favor ingrese un email válido')
     }
 
     const loading = mostrarLoading(proveedorEditando ? 'Actualizando proveedor...' : 'Guardando proveedor...')
@@ -130,6 +132,8 @@ async function guardarProveedor() {
       result = data[0]
     } else {
       // Crear nuevo proveedor
+      proveedor.created_at = new Date().toISOString()
+      
       const { data, error } = await supabase
         .from('proveedores')
         .insert([proveedor])
@@ -164,8 +168,27 @@ function resetFormularioProveedor() {
   form.classList.remove('was-validated')
   proveedorEditando = null
   document.getElementById('providerId').value = ''
-  document.getElementById('addEditProviderModalLabel').textContent = 'Agregar Nuevo Proveedor'
-  document.getElementById('saveProviderBtn').textContent = 'Guardar Proveedor'
+  document.getElementById('addEditProviderModalLabel').textContent = 'Agregar Proveedor'
+  document.getElementById('saveProviderBtn').textContent = 'Guardar'
+}
+
+// Formatear fecha para visualización
+function formatearFecha(fecha) {
+  if (!fecha) return 'N/A'
+  return new Date(fecha).toLocaleDateString('es-MX', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
+// Escapar HTML para seguridad
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;")
 }
 
 // Mostrar loading
@@ -200,11 +223,19 @@ function mostrarError(mensaje, titulo = 'Error') {
 // Obtener mensaje de error amigable
 function obtenerMensajeError(error) {
   if (error.code === '42501') return 'No tiene permisos para realizar esta acción.'
-  if (error.message.includes('duplicate key')) return 'Ya existe un proveedor con ese nombre.'
+  if (error.code === '23505') return 'Ya existe un proveedor con ese nombre.'
+  if (error.message.includes('violates not-null constraint')) return 'Faltan campos requeridos.'
   return error.message || 'Ocurrió un error inesperado. Intente nuevamente.'
 }
 
 // ========== FUNCIONES GLOBALES (window) ==========
+
+// Función para nuevo proveedor
+window.nuevoProveedor = function() {
+  resetFormularioProveedor()
+  const modal = new bootstrap.Modal(document.getElementById('addEditProviderModal'))
+  modal.show()
+}
 
 // Editar proveedor
 window.editarProveedor = async function(id) {
@@ -228,7 +259,7 @@ window.editarProveedor = async function(id) {
     // Configurar para edición
     proveedorEditando = proveedor
     document.getElementById('addEditProviderModalLabel').textContent = 'Editar Proveedor'
-    document.getElementById('saveProviderBtn').textContent = 'Actualizar Proveedor'
+    document.getElementById('saveProviderBtn').textContent = 'Actualizar'
 
     // Mostrar modal
     const modal = new bootstrap.Modal(document.getElementById('addEditProviderModal'))
