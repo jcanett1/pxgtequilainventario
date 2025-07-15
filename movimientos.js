@@ -92,7 +92,8 @@ async function cargarProductos() {
 // Cargar movimientos en la tabla
 async function cargarMovimientos() {
   try {
-    const { data: movimientos, error } = await supabase
+    // Consulta modificada para manejar correctamente las relaciones
+    const query = supabase
       .from('movimientos')
       .select(`
         id,
@@ -103,15 +104,22 @@ async function cargarMovimientos() {
         created_at,
         producto_id,
         productos (id, nombre),
-        usuario_id,
-        usuarios: usuario_id (email)
+        usuario_id
       `)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    // Solo intentar unir con auth.users si el usuario está autenticado
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      query.select(`, usuarios: usuario_id (email)`);
+    }
+
+    const { data: movimientos, error } = await query;
+
+    if (error) throw error;
     
-    if (error) throw error
-    
-    const tableBody = document.getElementById('movementsTableBody')
-    tableBody.innerHTML = ''
+    const tableBody = document.getElementById('movementsTableBody');
+    tableBody.innerHTML = '';
     
     if (movimientos.length === 0) {
       tableBody.innerHTML = `
@@ -120,12 +128,20 @@ async function cargarMovimientos() {
             No hay movimientos registrados
           </td>
         </tr>
-      `
-      return
+      `;
+      return;
     }
     
     movimientos.forEach(movimiento => {
-      const row = document.createElement('tr')
+      const row = document.createElement('tr');
+      
+      // Manejar el email del usuario de manera segura
+      let usuarioEmail = 'Sistema';
+      if (movimiento.usuarios && movimiento.usuarios.email) {
+        usuarioEmail = movimiento.usuarios.email;
+      } else if (movimiento.usuario_id) {
+        usuarioEmail = 'Usuario (' + movimiento.usuario_id.substring(0, 8) + '...)';
+      }
       
       row.innerHTML = `
         <td>${movimiento.id}</td>
@@ -134,16 +150,16 @@ async function cargarMovimientos() {
         <td>${movimiento.cantidad}</td>
         <td>${movimiento.motivo || ''}</td>
         <td>${movimiento.destinatario || '-'}</td>
-        <td>${movimiento.usuarios?.email || 'Sistema'}</td>
+        <td>${usuarioEmail}</td>
         <td>${formatearFecha(movimiento.created_at)}</td>
-      `
+      `;
       
-      tableBody.appendChild(row)
-    })
+      tableBody.appendChild(row);
+    });
     
   } catch (error) {
-    console.error('Error cargando movimientos:', error)
-    mostrarAlerta('Error al cargar movimientos', 'error')
+    console.error('Error cargando movimientos:', error);
+    mostrarAlerta('Error al cargar movimientos. ' + (error.message || ''), 'error');
   }
 }
 
