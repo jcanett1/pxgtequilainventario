@@ -3,33 +3,6 @@
 import { createClient } from '@supabase/supabase-js';
 import Swal from 'sweetalert2';
 import Chart from 'chart.js';
-import { 
-  Chart, 
-  DoughnutController, 
-  ArcElement, 
-  LineController, 
-  LineElement, 
-  PointElement, 
-  CategoryScale, 
-  LinearScale,
-  Legend,
-  Title,
-  Tooltip
-} from 'chart.js';
-
-// Registra los componentes necesarios
-Chart.register(
-  DoughnutController, 
-  ArcElement, 
-  LineController, 
-  LineElement, 
-  PointElement, 
-  CategoryScale, 
-  LinearScale,
-  Legend,
-  Title,
-  Tooltip
-);
 
 // Configuración de Supabase
 const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co'
