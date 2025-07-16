@@ -53,9 +53,9 @@ async function loadMetrics() {
       
     if (stockError) throw stockError;
     
-    const totalStockValue = productos.reduce((total, producto) => {
-      return total + (parseFloat(producto.precio || 0) * parseInt(producto.cantidad || 0);
-    }, 0);
+    const totalStockValue = productos.reduce((total, producto) => 
+  total + (parseFloat(producto.precio || 0) * parseInt(producto.cantidad || 0))
+, 0);
     
     // Update the UI
     document.getElementById('totalProducts').textContent = totalProducts;
