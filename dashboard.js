@@ -1,7 +1,34 @@
 // js/dashboard.js
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Swal from 'sweetalert2'
-import Chart from 'https://esm.sh/chart.js@4.4.0' // Añade esta línea
+// dashboard.js
+import { createClient } from '@supabase/supabase-js';
+import Swal from 'sweetalert2';
+import { 
+  Chart, 
+  DoughnutController, 
+  ArcElement, 
+  LineController, 
+  LineElement, 
+  PointElement, 
+  CategoryScale, 
+  LinearScale,
+  Legend,
+  Title,
+  Tooltip
+} from 'chart.js';
+
+// Registra los componentes necesarios
+Chart.register(
+  DoughnutController, 
+  ArcElement, 
+  LineController, 
+  LineElement, 
+  PointElement, 
+  CategoryScale, 
+  LinearScale,
+  Legend,
+  Title,
+  Tooltip
+);
 
 // Configuración de Supabase
 const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co'
