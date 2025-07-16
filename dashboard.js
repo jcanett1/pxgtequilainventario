@@ -7,7 +7,6 @@ const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3a3Zmd3JybGl6aHFkcGF4Zm1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NTIyODMsImV4cCI6MjA2NTMyODI4M30.6ryUGUVRcDtASw0s1RTnKwSA4ezn_I_oxHeuSWGmwFU'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-
 document.addEventListener('DOMContentLoaded', function() {
   initializeDashboard();
 });
@@ -43,19 +42,19 @@ async function loadMetrics() {
     const { count: todayMovementsCount, error: movementsError } = await supabase
       .from('movimientos')
       .select('*', { count: 'exact', head: true })
-      .gte('fecha', todayStr);
+      .gte('created_at', todayStr);
       
     if (movementsError) throw movementsError;
     
     // Calculate total stock value
     const { data: productos, error: stockError } = await supabase
       .from('productos')
-      .select('precio, stock');
+      .select('precio, cantidad');
       
     if (stockError) throw stockError;
     
     const totalStockValue = productos.reduce((total, producto) => {
-      return total + (parseFloat(producto.precio || 0) * parseInt(producto.stock || 0));
+      return total + (parseFloat(producto.precio || 0) * parseInt(producto.cantidad || 0);
     }, 0);
     
     // Update the UI
@@ -73,18 +72,21 @@ async function loadStockByCategory() {
   try {
     const { data, error } = await supabase
       .from('productos')
-      .select('categoria, stock');
+      .select(`
+        cantidad,
+        categorias: categoria_id(nombre)
+      `);
       
     if (error) throw error;
     
     // Process data for chart
     const categorySums = {};
     data.forEach(item => {
-      const category = item.categoria || 'Sin categoría';
+      const category = item.categorias?.nombre || 'Sin categoría';
       if (!categorySums[category]) {
         categorySums[category] = 0;
       }
-      categorySums[category] += parseInt(item.stock || 0);
+      categorySums[category] += parseInt(item.cantidad || 0);
     });
     
     const labels = Object.keys(categorySums);
@@ -138,9 +140,14 @@ async function loadRecentMovements() {
     
     const { data, error } = await supabase
       .from('movimientos')
-      .select('fecha, tipo, cantidad')
-      .gte('fecha', sevenDaysAgoStr)
-      .order('fecha', { ascending: true });
+      .select(`
+        created_at, 
+        tipo, 
+        cantidad,
+        productos: producto_id(nombre)
+      `)
+      .gte('created_at', sevenDaysAgoStr)
+      .order('created_at', { ascending: true });
       
     if (error) throw error;
     
@@ -159,7 +166,7 @@ async function loadRecentMovements() {
     
     // Fill with actual data
     data.forEach(movement => {
-      const dateStr = formatDateForChart(new Date(movement.fecha));
+      const dateStr = formatDateForChart(new Date(movement.created_at));
       if (dateMap[dateStr]) {
         if (movement.tipo === 'entrada') {
           dateMap[dateStr].entrada += parseInt(movement.cantidad || 0);
@@ -235,7 +242,13 @@ async function loadRecentProducts() {
   try {
     const { data, error } = await supabase
       .from('productos')
-      .select('nombre, categoria, stock, precio, fecha_ingreso')
+      .select(`
+        nombre, 
+        cantidad,
+        precio, 
+        fecha_ingreso,
+        categorias: categoria_id(nombre)
+      `)
       .order('fecha_ingreso', { ascending: false })
       .limit(5);
       
@@ -248,8 +261,8 @@ async function loadRecentProducts() {
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${producto.nombre}</td>
-        <td>${producto.categoria || '-'}</td>
-        <td>${producto.stock || '0'}</td>
+        <td>${producto.categorias?.nombre || '-'}</td>
+        <td>${producto.cantidad || '0'}</td>
         <td>$${parseFloat(producto.precio || 0).toFixed(2)}</td>
         <td>${formatearFecha(producto.fecha_ingreso)}</td>
       `;
