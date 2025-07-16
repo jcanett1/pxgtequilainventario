@@ -2,6 +2,7 @@
 // dashboard.js
 import { createClient } from '@supabase/supabase-js';
 import Swal from 'sweetalert2';
+import Chart from 'chart.js';
 import { 
   Chart, 
   DoughnutController, 
