@@ -3,7 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Control de Inventario PXG Tequila</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js",
+        "chart.js": "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js",
+        "sweetalert2": "https://cdn.jsdelivr.net/npm/sweetalert2@11/+esm"
+      }
+    }
+  </script>
+  <meta http-equiv="Access-Control-Allow-Origin" content="*">
+  <title>Dashboard - PXG Tequila</title>
   
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -114,7 +124,7 @@
     }
     
     .welcome-section {
-      background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://imgs.search.brave.com/u4WL-UcRwWAY97xLljsoBO3NmaIsouSG8d_PwCNMDW8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9sb2dv/ZGl4LmNvbS9sb2dv/LzEzNTg0MzEuanBn');
+      background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://cdn.pixabay.com/photo/2018/01/09/11/04/tequila-3071275_1280.jpg');
       background-size: cover;
       background-position: center;
       color: white;
@@ -145,13 +155,58 @@
         padding: 1.5rem;
       }
     }
+
+    /* Add stock level color classes */
+    .stock-low { 
+      background-color: rgba(255, 0, 0, 0.1) !important; 
+    }
+    .stock-medium { 
+      background-color: rgba(255, 165, 0, 0.1) !important; 
+    }
+    .stock-high { 
+      background-color: rgba(0, 128, 0, 0.1) !important; 
+    }
+
+    /* Add dashboard specific styles */
+    .metrics-card {
+      padding: 1.5rem;
+      text-align: center;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+    
+    .metrics-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .metrics-card i {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: var(--primary-color);
+    }
+    
+    .metrics-value {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+    
+    .metrics-label {
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 2rem;
+    }
   </style>
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark mb-4">
     <div class="container">
       <a class="navbar-brand" href="index.html">
-        <img src="https://imgs.search.brave.com/u4WL-UcRwWAY97xLljsoBO3NmaIsouSG8d_PwCNMDW8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9sb2dv/ZGl4LmNvbS9sb2dv/LzEzNTg0MzEuanBn" alt="PXG Tequila Logo" width="30" height="30" class="d-inline-block align-text-top">
+        <img src="https://cdn.pixabay.com/photo/2014/04/03/00/42/tequila-309425_640.png" alt="PXG Tequila Logo" width="30" height="30" class="d-inline-block align-text-top">
         PXG Tequila Inventarios
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -171,245 +226,94 @@
   </nav>
 
   <div class="container">
-    <div class="welcome-section text-center">
-      <h1>Sistema de Control de Inventarios</h1>
-      <p class="lead">Gestiona de forma eficiente tu inventario de PXG Tequila</p>
+    <!-- Welcome Section -->
+    <div class="welcome-section mb-4 p-4 text-center">
+      <h1>Bienvenido al Sistema de Inventarios</h1>
+      <p class="lead">Gestiona eficientemente tus productos, movimientos y stock.</p>
     </div>
-
-    <!-- Stats Cards -->
-    <div class="row mb-4">
-      <div class="col-md-3 col-sm-6">
-        <div class="card stats-card">
-          <i class="fas fa-boxes"></i>
-          <div class="stats-value" id="total-productos">145</div>
-          <div class="stats-label">Productos</div>
+    
+    <!-- Metrics Summary Section -->
+    <div id="metricsRow" class="row mb-4">
+      <!-- Will be populated by JS -->
+      <div class="col-md-4 mb-3">
+        <div class="card metrics-card">
+          <i class="fas fa-box"></i>
+          <div class="metrics-value" id="totalProducts">--</div>
+          <div class="metrics-label">Total de Productos</div>
         </div>
       </div>
-      <div class="col-md-3 col-sm-6">
-        <div class="card stats-card">
-          <i class="fas fa-arrow-circle-down"></i>
-          <div class="stats-value" id="entradas-hoy">12</div>
-          <div class="stats-label">Entradas Hoy</div>
+      
+      <div class="col-md-4 mb-3">
+        <div class="card metrics-card">
+          <i class="fas fa-exchange-alt"></i>
+          <div class="metrics-value" id="todayMovements">--</div>
+          <div class="metrics-label">Movimientos Hoy</div>
         </div>
       </div>
-      <div class="col-md-3 col-sm-6">
-        <div class="card stats-card">
-          <i class="fas fa-arrow-circle-up"></i>
-          <div class="stats-value" id="salidas-hoy">8</div>
-          <div class="stats-label">Salidas Hoy</div>
-        </div>
-      </div>
-      <div class="col-md-3 col-sm-6">
-        <div class="card stats-card">
-          <i class="fas fa-exclamation-triangle"></i>
-          <div class="stats-value" id="stock-bajo">6</div>
-          <div class="stats-label">Stock Bajo</div>
+      
+      <div class="col-md-4 mb-3">
+        <div class="card metrics-card">
+          <i class="fas fa-dollar-sign"></i>
+          <div class="metrics-value" id="totalStockValue">--</div>
+          <div class="metrics-label">Valor Total en Stock</div>
         </div>
       </div>
     </div>
-
-    <!-- Gráficos -->
+    
+    <!-- Charts Section -->
     <div class="row mb-4">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
+      <div class="col-md-6 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
             <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Stock por Categoría</h5>
-            <div class="dropdown">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chartOptionsDropdown1" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-cog"></i>
-              </button>
-              <ul class="dropdown-menu" aria-labelledby="chartOptionsDropdown1">
-                <li><a class="dropdown-item" href="javascript:void(0)">Últimos 7 días</a></li>
-                <li><a class="dropdown-item" href="javascript:void(0)">Últimos 30 días</a></li>
-                <li><a class="dropdown-item" href="javascript:void(0)">Este año</a></li>
-              </ul>
-            </div>
           </div>
           <div class="card-body">
-            <canvas id="stockByCategory" height="300"></canvas>
+            <div class="chart-container">
+              <canvas id="chartStockByCategory"></canvas>
+            </div>
           </div>
         </div>
       </div>
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
+      
+      <div class="col-md-6 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
             <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Movimientos Recientes</h5>
-            <div class="dropdown">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chartOptionsDropdown2" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-cog"></i>
-              </button>
-              <ul class="dropdown-menu" aria-labelledby="chartOptionsDropdown2">
-                <li><a class="dropdown-item" href="javascript:void(0)">Últimos 7 días</a></li>
-                <li><a class="dropdown-item" href="javascript:void(0)">Últimos 30 días</a></li>
-                <li><a class="dropdown-item" href="javascript:void(0)">Este año</a></li>
-              </ul>
-            </div>
           </div>
           <div class="card-body">
-            <canvas id="stockMovements" height="300"></canvas>
+            <div class="chart-container">
+              <canvas id="chartRecentMovements"></canvas>
+            </div>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Productos Recientes -->
-    <div class="row">
+    
+    <!-- Recent Products Table -->
+    <div class="row mb-4">
       <div class="col-12">
         <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-box me-2"></i>Productos Recientes</h5>
-            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addProductModal">
-              <i class="fas fa-plus"></i> Agregar Producto
-            </button>
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-star me-2"></i>Productos Recientes</h5>
           </div>
           <div class="card-body">
             <div class="table-responsive">
-              <table class="table table-striped">
+              <table class="table table-striped" id="recentProductsTable">
                 <thead>
                   <tr>
                     <th>Nombre</th>
                     <th>Categoría</th>
+                    <th>Stock</th>
                     <th>Precio</th>
-                    <th>Cantidad</th>
-                    <th>Último Movimiento</th>
-                    <th>Acciones</th>
+                    <th>Fecha de ingreso</th>
                   </tr>
                 </thead>
-                <tbody id="productosTableBody">
-                  <tr>
-                    <td>Tequila PXG Blanco</td>
-                    <td>Tequila Blanco</td>
-                    <td>$380.00</td>
-                    <td>45</td>
-                    <td>15/04/2025</td>
-                    <td class="action-buttons">
-                      <button class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Editar"><i class="fas fa-edit"></i></button>
-                      <button class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Ajustar cantidad"><i class="fas fa-plus-minus"></i></button>
-                      <button class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" title="Ver historial"><i class="fas fa-history"></i></button>
-                      <button class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Eliminar"><i class="fas fa-trash"></i></button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Tequila PXG Reposado</td>
-                    <td>Tequila Reposado</td>
-                    <td>$420.00</td>
-                    <td>38</td>
-                    <td>14/04/2025</td>
-                    <td class="action-buttons">
-                      <button class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Editar"><i class="fas fa-edit"></i></button>
-                      <button class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Ajustar cantidad"><i class="fas fa-plus-minus"></i></button>
-                      <button class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" title="Ver historial"><i class="fas fa-history"></i></button>
-                      <button class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Eliminar"><i class="fas fa-trash"></i></button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Tequila PXG Añejo</td>
-                    <td>Tequila Añejo</td>
-                    <td>$520.00</td>
-                    <td>24</td>
-                    <td>13/04/2025</td>
-                    <td class="action-buttons">
-                      <button class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Editar"><i class="fas fa-edit"></i></button>
-                      <button class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Ajustar cantidad"><i class="fas fa-plus-minus"></i></button>
-                      <button class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" title="Ver historial"><i class="fas fa-history"></i></button>
-                      <button class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Eliminar"><i class="fas fa-trash"></i></button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Tequila PXG Extra Añejo</td>
-                    <td>Tequila Extra Añejo</td>
-                    <td>$750.00</td>
-                    <td>18</td>
-                    <td>12/04/2025</td>
-                    <td class="action-buttons">
-                      <button class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Editar"><i class="fas fa-edit"></i></button>
-                      <button class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Ajustar cantidad"><i class="fas fa-plus-minus"></i></button>
-                      <button class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" title="Ver historial"><i class="fas fa-history"></i></button>
-                      <button class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Eliminar"><i class="fas fa-trash"></i></button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Tequila PXG Cristalino</td>
-                    <td>Tequila Cristalino</td>
-                    <td>$620.00</td>
-                    <td>15</td>
-                    <td>11/04/2025</td>
-                    <td class="action-buttons">
-                      <button class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Editar"><i class="fas fa-edit"></i></button>
-                      <button class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Ajustar cantidad"><i class="fas fa-plus-minus"></i></button>
-                      <button class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" title="Ver historial"><i class="fas fa-history"></i></button>
-                      <button class="btn btn-sm btn-danger" data-bs-toggle="tooltip" title="Eliminar"><i class="fas fa-trash"></i></button>
-                    </td>
-                  </tr>
+                <tbody id="recentProductsTableBody">
+                  <!-- Will be populated by JS -->
                 </tbody>
               </table>
             </div>
-            <div class="text-end mt-3">
-              <a href="javascript:void(0)" class="btn btn-outline-primary btn-sm">Ver todos los productos</a>
-            </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modals -->
-  <!-- Modal Agregar Producto -->
-  <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="addProductModalLabel">Agregar Nuevo Producto</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form id="addProductForm">
-            <div class="mb-3">
-              <label for="productName" class="form-label">Nombre del Producto</label>
-              <input type="text" class="form-control" id="productName" required>
-            </div>
-            <div class="mb-3">
-              <label for="productCategory" class="form-label">Categoría</label>
-              <select class="form-select" id="productCategory" required>
-                <option value="">Seleccionar categoría</option>
-                <option value="Tequila Blanco">Tequila Blanco</option>
-                <option value="Tequila Reposado">Tequila Reposado</option>
-                <option value="Tequila Añejo">Tequila Añejo</option>
-                <option value="Tequila Extra Añejo">Tequila Extra Añejo</option>
-                <option value="Tequila Cristalino">Tequila Cristalino</option>
-              </select>
-            </div>
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="productPrice" class="form-label">Precio</label>
-                <div class="input-group">
-                  <span class="input-group-text">$</span>
-                  <input type="number" class="form-control" id="productPrice" min="0" step="0.01" required>
-                </div>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="productQuantity" class="form-label">Cantidad Inicial</label>
-                <input type="number" class="form-control" id="productQuantity" min="0" required>
-              </div>
-            </div>
-            <div class="mb-3">
-              <label for="productDescription" class="form-label">Descripción</label>
-              <textarea class="form-control" id="productDescription" rows="3"></textarea>
-            </div>
-            <div class="mb-3">
-              <label for="productSupplier" class="form-label">Proveedor</label>
-              <select class="form-select" id="productSupplier">
-                <option value="">Seleccionar proveedor</option>
-                <option value="1">Destilería San José</option>
-                <option value="2">Agave Premium</option>
-                <option value="3">Tequila Superior</option>
-              </select>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-primary" id="saveProductBtn">Guardar Producto</button>
         </div>
       </div>
     </div>
@@ -450,307 +354,6 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script id="app-script">
-document.addEventListener('DOMContentLoaded', function() {
-  // Configura Supabase directamente
-  const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3a3Zmd3JybGl6aHFkcGF4Zm1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NTIyODMsImV4cCI6MjA2NTMyODI4M30.6ryUGUVRcDtASw0s1RTnKwSA4ezn_I_oxHeuSWGmwFU';
-  
-  // Inicializa Supabase
-  window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
-  
-  // Initialize tooltips
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl);
-  });
-  
-  // Initialize charts
-  initCharts();
-  
-  // Load initial data
-  cargarProductos();
-  
-  // Set up event listeners
-  document.getElementById('saveProductBtn').addEventListener('click', function() {
-    const form = document.getElementById('addProductForm');
-    if (form.checkValidity()) {
-      const producto = {
-        nombre: document.getElementById('productName').value,
-        categoria: document.getElementById('productCategory').value,
-        precio: parseFloat(document.getElementById('productPrice').value),
-        cantidad: parseInt(document.getElementById('productQuantity').value),
-        descripcion: document.getElementById('productDescription').value,
-        proveedor_id: document.getElementById('productSupplier').value || null
-      };
-      
-      guardarProducto(producto);
-      const modal = bootstrap.Modal.getInstance(document.getElementById('addProductModal'));
-      modal.hide();
-      form.reset();
-    } else {
-      form.reportValidity();
-    }
-  });
-  
-  // Manejo de errores global
-  window.addEventListener('error', function(error) {
-    console.error('Error global:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Ocurrió un error inesperado. Por favor recargue la página.'
-    });
-  });
-});
-    function initCharts() {
-      // Gráfico de stock por categoría
-      const ctxCategory = document.getElementById('stockByCategory').getContext('2d');
-      const stockByCategoryChart = new Chart(ctxCategory, {
-        type: 'pie',
-        data: {
-          labels: ['Tequila Blanco', 'Tequila Reposado', 'Tequila Añejo', 'Tequila Extra Añejo', 'Tequila Cristalino'],
-          datasets: [{
-            data: [45, 38, 24, 18, 15],
-            backgroundColor: [
-              '#8b0000',
-              '#b22222',
-              '#dc3545',
-              '#e67373',
-              '#ffb6b6'
-            ],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                padding: 20
-              }
-            },
-            title: {
-              display: false
-            }
-          }
-        }
-      });
-
-      // Gráfico de movimientos recientes
-      const ctxMovements = document.getElementById('stockMovements').getContext('2d');
-      const stockMovementsChart = new Chart(ctxMovements, {
-        type: 'line',
-        data: {
-          labels: ['10/04', '11/04', '12/04', '13/04', '14/04', '15/04', '16/04'],
-          datasets: [
-            {
-              label: 'Entradas',
-              data: [5, 8, 12, 7, 10, 12, 14],
-              borderColor: '#198754',
-              backgroundColor: 'rgba(25, 135, 84, 0.1)',
-              fill: true,
-              tension: 0.4
-            },
-            {
-              label: 'Salidas',
-              data: [3, 5, 8, 10, 7, 8, 13],
-              borderColor: '#dc3545',
-              backgroundColor: 'rgba(220, 53, 69, 0.1)',
-              fill: true,
-              tension: 0.4
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'bottom'
-            },
-            title: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
-      });
-    }
-
-    // Esta función simularía la conexión con la API para cargar los productos
-    function cargarProductos() {
-      return supabase.from('productos').select('*')
-        .then(response => {
-          if (response.error) throw response.error;
-          
-          // Update the UI with response.data
-          const tableBody = document.getElementById('productosTableBody');
-          tableBody.innerHTML = ''; // Clear existing content
-          
-          response.data.forEach(product => {
-            // Create and append table rows with product data
-            // ... code to populate the table
-          });
-          
-          return response.data;
-        })
-        .catch(error => {
-          console.error('Error loading productos:', error);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudieron cargar los productos. Por favor intente de nuevo.'
-          });
-        });
-    }
-
-    // Esta función simularía guardar un producto a través de la API
-    function guardarProducto(producto) {
-      return supabase.from('productos').insert(producto)
-        .then(response => {
-          if (response.error) throw response.error;
-          
-          Swal.fire({
-            icon: 'success',
-            title: 'Éxito',
-            text: 'Producto guardado correctamente'
-          });
-          
-          // Reload the products table
-          cargarProductos();
-          return true;
-        })
-        .catch(error => {
-          console.error('Error saving producto:', error);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudo guardar el producto. Por favor intente de nuevo.'
-          });
-          return false;
-        });
-    }
-
-    function registrarEntrada(entrada) {
-      return supabase.from('entradas').insert(entrada)
-        .then(response => {
-          if (response.error) throw response.error;
-          
-          // Update the product stock
-          return supabase.from('productos')
-            .update({ cantidad: supabase.rpc('increment', { x: entrada.cantidad }) })
-            .match({ id: entrada.producto_id });
-        })
-        .then(response => {
-          if (response.error) throw response.error;
-          
-          Swal.fire({
-            icon: 'success',
-            title: 'Éxito',
-            text: 'Entrada registrada correctamente'
-          });
-          
-          return true;
-        })
-        .catch(error => {
-          console.error('Error registrando entrada:', error);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudo registrar la entrada. Por favor intente de nuevo.'
-          });
-          return false;
-        });
-    }
-    
-    function registrarSalida(salida) {
-      return supabase.from('salidas').insert(salida)
-        .then(response => {
-          if (response.error) throw response.error;
-          
-          // Update the product stock
-          return supabase.from('productos')
-            .update({ cantidad: supabase.rpc('decrement', { x: salida.cantidad }) })
-            .match({ id: salida.producto_id });
-        })
-        .then(response => {
-          if (response.error) throw response.error;
-          
-          Swal.fire({
-            icon: 'success',
-            title: 'Éxito',
-            text: 'Salida registrada correctamente'
-          });
-          
-          return true;
-        })
-        .catch(error => {
-          console.error('Error registrando salida:', error);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudo registrar la salida. Por favor intente de nuevo.'
-          });
-          return false;
-        });
-    }
-    
-    function gestionarProveedores(proveedor, accion) {
-      let operation;
-      
-      switch(accion) {
-        case 'insert':
-          operation = supabase.from('proveedores').insert(proveedor);
-          break;
-        case 'update':
-          operation = supabase.from('proveedores')
-            .update(proveedor)
-            .match({ id: proveedor.id });
-          break;
-        case 'delete':
-          operation = supabase.from('proveedores')
-            .delete()
-            .match({ id: proveedor.id });
-          break;
-        default:
-          return Promise.reject('Acción no válida');
-      }
-      
-      return operation
-        .then(response => {
-          if (response.error) throw response.error;
-          
-          Swal.fire({
-            icon: 'success',
-            title: 'Éxito',
-            text: `Proveedor ${accion === 'delete' ? 'eliminado' : 
-                  accion === 'update' ? 'actualizado' : 'agregado'} correctamente`
-          });
-          
-          // Reload providers table
-          cargarProveedores();
-          return true;
-        })
-        .catch(error => {
-          console.error(`Error al ${accion} proveedor:`, error);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: `No se pudo ${accion === 'delete' ? 'eliminar' : 
-                  accion === 'update' ? 'actualizar' : 'agregar'} el proveedor. Por favor intente de nuevo.`
-          });
-          return false;
-        });
-    }
-  </script>
+  <script type="module" src="./dashboard.js"></script>
 </body>
 </html>
