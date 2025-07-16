@@ -72,62 +72,43 @@ async function loadStockByCategory() {
   try {
     const { data, error } = await supabase
       .from('productos')
-      .select(`
-        cantidad,
-        categorias: categoria_id(nombre)
-      `);
+      .select('cantidad, categorias: categoria_id(nombre)');
       
     if (error) throw error;
     
-    // Process data for chart
     const categorySums = {};
     data.forEach(item => {
       const category = item.categorias?.nombre || 'Sin categoría';
-      if (!categorySums[category]) {
-        categorySums[category] = 0;
-      }
-      categorySums[category] += parseInt(item.cantidad || 0);
+      categorySums[category] = (categorySums[category] || 0) + item.cantidad;
     });
     
-    const labels = Object.keys(categorySums);
-    const values = Object.values(categorySums);
+    const ctx = document.getElementById('chartStockByCategory');
+    if (!ctx) throw new Error('Elemento del gráfico no encontrado');
     
-    // Create chart
-    const ctx = document.getElementById('chartStockByCategory').getContext('2d');
     new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: labels,
+        labels: Object.keys(categorySums),
         datasets: [{
-          data: values,
+          data: Object.values(categorySums),
           backgroundColor: [
             'rgba(139, 0, 0, 0.7)',
             'rgba(255, 179, 71, 0.7)',
-            'rgba(153, 102, 51, 0.7)',
-            'rgba(50, 168, 82, 0.7)',
-            'rgba(54, 162, 235, 0.7)',
-            'rgba(153, 102, 255, 0.7)',
+            'rgba(153, 102, 51, 0.7)'
           ]
         }]
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
         plugins: {
-          legend: {
-            position: 'right',
-          },
-          title: {
-            display: true,
-            text: 'Distribución de Stock por Categoría'
-          }
+          legend: { position: 'right' }
         }
       }
     });
     
   } catch (error) {
     console.error('Error loading stock by category:', error);
-    mostrarAlerta('Error al cargar gráfico de stock por categoría', 'error');
+    mostrarAlerta('Error al cargar gráfico de stock', 'error');
   }
 }
 
