@@ -2,7 +2,7 @@
 // dashboard.js
 import { createClient } from '@supabase/supabase-js';
 import Swal from 'sweetalert2';
-import Chart from 'chart.js';
+import Chart from 'https://esm.sh/chart.js@4.4.0' // Añade esta línea
 
 // Configuración de Supabase
 const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co'
