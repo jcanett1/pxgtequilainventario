@@ -110,7 +110,7 @@ async function loadStockByCategory() {
     });
     
     const ctx = document.getElementById('chartStockByCategory');
-    if (!ctx) throw new Error('Elemento del gráfico no encontrado');
+    if (!ctx) throw new Error('Canvas element not found');
     
     new Chart(ctx, {
       type: 'doughnut',
@@ -121,49 +121,50 @@ async function loadStockByCategory() {
           backgroundColor: [
             'rgba(139, 0, 0, 0.7)',
             'rgba(255, 179, 71, 0.7)',
-            'rgba(153, 102, 51, 0.7)'
+            'rgba(153, 102, 51, 0.7)',
+            'rgba(50, 168, 82, 0.7)',
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(153, 102, 255, 0.7)',
           ]
         }]
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'right' }
+          legend: {
+            position: 'right',
+          },
+          title: {
+            display: true,
+            text: 'Distribución de Stock por Categoría'
+          }
         }
       }
     });
     
   } catch (error) {
     console.error('Error loading stock by category:', error);
-    mostrarAlerta('Error al cargar gráfico de stock', 'error');
+    mostrarAlerta('Error al cargar gráfico de stock por categoría', 'error');
   }
 }
-
 async function loadRecentMovements() {
   try {
-    // Calculate date from 7 days ago
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const sevenDaysAgoStr = sevenDaysAgo.toISOString();
     
     const { data, error } = await supabase
       .from('movimientos')
-      .select(`
-        created_at, 
-        tipo, 
-        cantidad,
-        productos: producto_id(nombre)
-      `)
+      .select('created_at, tipo, cantidad')
       .gte('created_at', sevenDaysAgoStr)
       .order('created_at', { ascending: true });
       
     if (error) throw error;
     
-    // Process data for chart - group by date and movement type
     const dateMap = {};
     const allDates = [];
     
-    // Create entries for last 7 days
     for (let i = 0; i < 7; i++) {
       const date = new Date();
       date.setDate(date.getDate() - (6 - i));
@@ -172,7 +173,6 @@ async function loadRecentMovements() {
       allDates.push(dateStr);
     }
     
-    // Fill with actual data
     data.forEach(movement => {
       const dateStr = formatDateForChart(new Date(movement.created_at));
       if (dateMap[dateStr]) {
@@ -184,12 +184,12 @@ async function loadRecentMovements() {
       }
     });
     
-    // Prepare datasets
     const entradas = allDates.map(date => dateMap[date].entrada);
     const salidas = allDates.map(date => dateMap[date].salida);
     
-    // Create chart
-    const ctx = document.getElementById('chartRecentMovements').getContext('2d');
+    const ctx = document.getElementById('chartRecentMovements');
+    if (!ctx) throw new Error('Canvas element not found');
+    
     new Chart(ctx, {
       type: 'line',
       data: {
