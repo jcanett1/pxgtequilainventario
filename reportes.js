@@ -1,4 +1,4 @@
-// js/reportes.js - Versión completa actualizada
+// js/reportes.js - Versión completa con reportes de productos y stock actualizados
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Swal from 'sweetalert2'
 import * as XLSX from 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm'
@@ -28,7 +28,7 @@ function mostrarAlerta(mensaje, tipo) {
   });
 }
 
-// Establece el rango de fechas por defecto (últimos 30 días)
+// Establece el rango de fechas por defecto (solo para movimientos y proveedores)
 function setDefaultDateRange() {
   const endDate = new Date();
   const startDate = new Date();
@@ -50,48 +50,63 @@ function setDefaultDateRange() {
 // Carga los datos para los filtros
 async function loadFiltersData() {
   try {
-    // Cargar productos para filtro de movimientos (si existe la tabla)
-    try {
-      const { data: productos, error: productosError } = await supabase
-        .from('productos')
-        .select('id, nombre')
-        .order('nombre', { ascending: true });
-        
-      if (!productosError && productos) {
-        const productoSelect = document.getElementById('movimientosProducto');
-        if (productoSelect) {
-          productos.forEach(producto => {
-            const option = document.createElement('option');
-            option.value = producto.id;
-            option.textContent = producto.nombre;
-            productoSelect.appendChild(option);
-          });
-        }
+    // Cargar productos para todos los filtros
+    const { data: productos, error: productosError } = await supabase
+      .from('productos')
+      .select('id, nombre, categoria, precio, stock')
+      .order('nombre', { ascending: true });
+      
+    if (!productosError && productos) {
+      // Para filtro de movimientos
+      const productoMovSelect = document.getElementById('movimientosProducto');
+      if (productoMovSelect) {
+        productos.forEach(producto => {
+          const option = document.createElement('option');
+          option.value = producto.id;
+          option.textContent = `${producto.nombre} (${producto.categoria || 'Sin categoría'})`;
+          productoMovSelect.appendChild(option);
+        });
       }
-    } catch (e) {
-      console.log('Tabla productos no disponible:', e.message);
+      
+      // Para filtro de productos
+      const productoProdSelect = document.getElementById('productosProducto');
+      if (productoProdSelect) {
+        productos.forEach(producto => {
+          const option = document.createElement('option');
+          option.value = producto.id;
+          option.textContent = `${producto.nombre} (${producto.categoria || 'Sin categoría'})`;
+          productoProdSelect.appendChild(option);
+        });
+      }
+      
+      // Para filtro de stock
+      const productoStockSelect = document.getElementById('stockProducto');
+      if (productoStockSelect) {
+        productos.forEach(producto => {
+          const option = document.createElement('option');
+          option.value = producto.id;
+          option.textContent = `${producto.nombre} (${producto.categoria || 'Sin categoría'})`;
+          productoStockSelect.appendChild(option);
+        });
+      }
     }
     
-    // Cargar categorías para filtro de stock (si existe la tabla)
-    try {
-      const { data: categorias, error: categoriasError } = await supabase
-        .from('categorias')
-        .select('id, nombre')
-        .order('nombre', { ascending: true });
-        
-      if (!categoriasError && categorias) {
-        const categoriaSelect = document.getElementById('stockCategoria');
-        if (categoriaSelect) {
-          categorias.forEach(categoria => {
-            const option = document.createElement('option');
-            option.value = categoria.id;
-            option.textContent = categoria.nombre;
-            categoriaSelect.appendChild(option);
-          });
-        }
+    // Cargar categorías para filtros
+    const { data: categorias, error: categoriasError } = await supabase
+      .from('categorias')
+      .select('id, nombre')
+      .order('nombre', { ascending: true });
+      
+    if (!categoriasError && categorias) {
+      const categoriaSelect = document.getElementById('productosCategoria');
+      if (categoriaSelect) {
+        categorias.forEach(categoria => {
+          const option = document.createElement('option');
+          option.value = categoria.id;
+          option.textContent = categoria.nombre;
+          categoriaSelect.appendChild(option);
+        });
       }
-    } catch (e) {
-      console.log('Tabla categorias no disponible:', e.message);
     }
     
   } catch (error) {
@@ -114,24 +129,23 @@ function attachEventHandlers() {
   addListener('exportMovimientosExcel', 'click', () => exportToExcel('movimientosTable', 'Reporte_Movimientos'));
   addListener('exportMovimientosPDF', 'click', () => exportToPDF('movimientosTable', 'Reporte_Movimientos'));
   
+  // Reporte de productos
+  addListener('generarReporteProductos', 'click', generarReporteProductos);
+  addListener('exportProductosExcel', 'click', () => exportToExcel('productosTable', 'Reporte_Productos'));
+  addListener('exportProductosPDF', 'click', () => exportToPDF('productosTable', 'Reporte_Productos'));
+  
+  // Reporte de stock
+  addListener('generarReporteStock', 'click', generarReporteStock);
+  addListener('exportStockExcel', 'click', () => exportToExcel('stockTable', 'Reporte_Stock'));
+  addListener('exportStockPDF', 'click', () => exportToPDF('stockTable', 'Reporte_Stock'));
+  
   // Reporte de proveedores
   addListener('generarReporteProveedores', 'click', generarReporteProveedores);
   addListener('exportProveedoresExcel', 'click', () => exportToExcel('proveedoresTable', 'Reporte_Proveedores'));
   addListener('exportProveedoresPDF', 'click', () => exportToPDF('proveedoresTable', 'Reporte_Proveedores'));
-  
-  // Deshabilitar reportes no disponibles
-  ['productos', 'stock'].forEach(section => {
-    const btnGenerate = document.getElementById(`generarReporte${section.charAt(0).toUpperCase() + section.slice(1)}`);
-    const btnExcel = document.getElementById(`export${section.charAt(0).toUpperCase() + section.slice(1)}Excel`);
-    const btnPDF = document.getElementById(`export${section.charAt(0).toUpperCase() + section.slice(1)}PDF`);
-    
-    if (btnGenerate) btnGenerate.disabled = true;
-    if (btnExcel) btnExcel.disabled = true;
-    if (btnPDF) btnPDF.disabled = true;
-  });
 }
 
-// Genera el reporte de movimientos
+// Genera el reporte de movimientos (se mantiene igual)
 async function generarReporteMovimientos() {
   try {
     const startDate = document.getElementById('movimientosStartDate')?.value;
@@ -185,7 +199,110 @@ async function generarReporteMovimientos() {
   }
 }
 
-// Genera el reporte de proveedores
+// Genera el reporte de productos (modificado para selección por producto/categoría)
+async function generarReporteProductos() {
+  try {
+    const productoId = document.getElementById('productosProducto')?.value;
+    const categoriaId = document.getElementById('productosCategoria')?.value;
+    
+    let query = supabase
+      .from('productos')
+      .select(`
+        id,
+        nombre,
+        descripcion,
+        categoria,
+        precio,
+        stock,
+        created_at
+      `)
+      .order('nombre', { ascending: true });
+    
+    if (productoId) query = query.eq('id', productoId);
+    if (categoriaId) query = query.eq('categoria_id', categoriaId);
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    const tableBody = document.getElementById('productosTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = data.length === 0 
+      ? '<tr><td colspan="7" class="text-center">No se encontraron productos</td></tr>'
+      : data.map(producto => `
+          <tr>
+            <td>${producto.id}</td>
+            <td>${producto.nombre}</td>
+            <td>${producto.categoria || 'Sin categoría'}</td>
+            <td>${producto.stock || '0'}</td>
+            <td>$${parseFloat(producto.precio || 0).toFixed(2)}</td>
+            <td>${formatearFecha(producto.created_at)}</td>
+            <td>${producto.descripcion || '-'}</td>
+          </tr>
+        `).join('');
+    
+    mostrarAlerta('Reporte de productos generado exitosamente', 'success');
+  } catch (error) {
+    console.error('Error generando reporte de productos:', error);
+    mostrarAlerta(`Error al generar reporte de productos: ${error.message}`, 'error');
+  }
+}
+
+// Genera el reporte de stock (modificado para selección por producto)
+async function generarReporteStock() {
+  try {
+    const productoId = document.getElementById('stockProducto')?.value;
+    
+    let query = supabase
+      .from('productos')
+      .select(`
+        id,
+        nombre,
+        categoria,
+        stock,
+        stock_minimo,
+        precio
+      `)
+      .order('nombre', { ascending: true });
+    
+    if (productoId) query = query.eq('id', productoId);
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    const tableBody = document.getElementById('stockTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = data.length === 0 
+      ? '<tr><td colspan="7" class="text-center">No se encontraron productos</td></tr>'
+      : data.map(producto => {
+          const valorTotal = parseFloat(producto.precio || 0) * parseInt(producto.stock || 0);
+          const alertaStock = producto.stock_minimo && producto.stock < producto.stock_minimo ? 
+            'text-danger fw-bold' : '';
+          
+          return `
+            <tr>
+              <td>${producto.id}</td>
+              <td>${producto.nombre}</td>
+              <td>${producto.categoria || 'Sin categoría'}</td>
+              <td class="${alertaStock}">${producto.stock || '0'}</td>
+              <td>${producto.stock_minimo || '0'}</td>
+              <td>$${parseFloat(producto.precio || 0).toFixed(2)}</td>
+              <td>$${valorTotal.toFixed(2)}</td>
+            </tr>
+          `;
+        }).join('');
+    
+    mostrarAlerta('Reporte de stock generado exitosamente', 'success');
+  } catch (error) {
+    console.error('Error generando reporte de stock:', error);
+    mostrarAlerta(`Error al generar reporte de stock: ${error.message}`, 'error');
+  }
+}
+
+// Genera el reporte de proveedores (se mantiene igual)
 async function generarReporteProveedores() {
   try {
     const startDate = document.getElementById('proveedoresStartDate')?.value;
