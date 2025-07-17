@@ -1,4 +1,4 @@
-// js/reportes.js - Versión corregida con imports funcionando
+// js/reportes.js - Versión completa actualizada
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Swal from 'sweetalert2'
 import * as XLSX from 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm'
@@ -36,7 +36,7 @@ function setDefaultDateRange() {
   
   const formatDate = (date) => date.toISOString().split('T')[0];
   
-  ['movimientos', 'productos', 'proveedores'].forEach(section => {
+  ['movimientos', 'proveedores'].forEach(section => {
     const startElement = document.getElementById(`${section}StartDate`);
     const endElement = document.getElementById(`${section}EndDate`);
     
@@ -50,40 +50,48 @@ function setDefaultDateRange() {
 // Carga los datos para los filtros
 async function loadFiltersData() {
   try {
-    // Cargar productos para filtro de movimientos
-    const { data: productos, error: productosError } = await supabase
-      .from('productos')
-      .select('id, nombre')
-      .order('nombre', { ascending: true });
-      
-    if (productosError) throw productosError;
-    
-    const productoSelect = document.getElementById('movimientosProducto');
-    if (productoSelect) {
-      productos.forEach(producto => {
-        const option = document.createElement('option');
-        option.value = producto.id;
-        option.textContent = producto.nombre;
-        productoSelect.appendChild(option);
-      });
+    // Cargar productos para filtro de movimientos (si existe la tabla)
+    try {
+      const { data: productos, error: productosError } = await supabase
+        .from('productos')
+        .select('id, nombre')
+        .order('nombre', { ascending: true });
+        
+      if (!productosError && productos) {
+        const productoSelect = document.getElementById('movimientosProducto');
+        if (productoSelect) {
+          productos.forEach(producto => {
+            const option = document.createElement('option');
+            option.value = producto.id;
+            option.textContent = producto.nombre;
+            productoSelect.appendChild(option);
+          });
+        }
+      }
+    } catch (e) {
+      console.log('Tabla productos no disponible:', e.message);
     }
     
-    // Cargar categorías para filtro de stock
-    const { data: categorias, error: categoriasError } = await supabase
-      .from('categorias')
-      .select('id, nombre')
-      .order('nombre', { ascending: true });
-      
-    if (categoriasError) throw categoriasError;
-    
-    const categoriaSelect = document.getElementById('stockCategoria');
-    if (categoriaSelect) {
-      categorias.forEach(categoria => {
-        const option = document.createElement('option');
-        option.value = categoria.id;
-        option.textContent = categoria.nombre;
-        categoriaSelect.appendChild(option);
-      });
+    // Cargar categorías para filtro de stock (si existe la tabla)
+    try {
+      const { data: categorias, error: categoriasError } = await supabase
+        .from('categorias')
+        .select('id, nombre')
+        .order('nombre', { ascending: true });
+        
+      if (!categoriasError && categorias) {
+        const categoriaSelect = document.getElementById('stockCategoria');
+        if (categoriaSelect) {
+          categorias.forEach(categoria => {
+            const option = document.createElement('option');
+            option.value = categoria.id;
+            option.textContent = categoria.nombre;
+            categoriaSelect.appendChild(option);
+          });
+        }
+      }
+    } catch (e) {
+      console.log('Tabla categorias no disponible:', e.message);
     }
     
   } catch (error) {
@@ -94,7 +102,6 @@ async function loadFiltersData() {
 
 // Asigna los manejadores de eventos
 function attachEventHandlers() {
-  // Verificar existencia de elementos antes de agregar event listeners
   const addListener = (id, event, handler) => {
     const element = document.getElementById(id);
     if (element) {
@@ -107,46 +114,26 @@ function attachEventHandlers() {
   addListener('exportMovimientosExcel', 'click', () => exportToExcel('movimientosTable', 'Reporte_Movimientos'));
   addListener('exportMovimientosPDF', 'click', () => exportToPDF('movimientosTable', 'Reporte_Movimientos'));
   
-  // Reporte de productos
-  addListener('generarReporteProductos', 'click', generarReporteProductos);
-  addListener('exportProductosExcel', 'click', () => exportToExcel('productosTable', 'Reporte_Productos'));
-  addListener('exportProductosPDF', 'click', () => exportToPDF('productosTable', 'Reporte_Productos'));
-  
-  // Reporte de stock
-  addListener('generarReporteStock', 'click', generarReporteStock);
-  addListener('exportStockExcel', 'click', () => exportToExcel('stockTable', 'Reporte_Stock'));
-  addListener('exportStockPDF', 'click', () => exportToPDF('stockTable', 'Reporte_Stock'));
-  
   // Reporte de proveedores
   addListener('generarReporteProveedores', 'click', generarReporteProveedores);
   addListener('exportProveedoresExcel', 'click', () => exportToExcel('proveedoresTable', 'Reporte_Proveedores'));
   addListener('exportProveedoresPDF', 'click', () => exportToPDF('proveedoresTable', 'Reporte_Proveedores'));
-}
-
-// Función auxiliar para verificar columnas
-async function verificarColumnas(tabla, columnasRequeridas) {
-  const { data, error } = await supabase
-    .from(tabla)
-    .select('*')
-    .limit(1);
   
-  if (error) throw error;
-  
-  if (data.length > 0) {
-    const columnasExistentes = Object.keys(data[0]);
-    const columnasFaltantes = columnasRequeridas.filter(col => !columnasExistentes.includes(col));
+  // Deshabilitar reportes no disponibles
+  ['productos', 'stock'].forEach(section => {
+    const btnGenerate = document.getElementById(`generarReporte${section.charAt(0).toUpperCase() + section.slice(1)}`);
+    const btnExcel = document.getElementById(`export${section.charAt(0).toUpperCase() + section.slice(1)}Excel`);
+    const btnPDF = document.getElementById(`export${section.charAt(0).toUpperCase() + section.slice(1)}PDF`);
     
-    if (columnasFaltantes.length > 0) {
-      throw new Error(`Las siguientes columnas no existen en la tabla ${tabla}: ${columnasFaltantes.join(', ')}`);
-    }
-  }
+    if (btnGenerate) btnGenerate.disabled = true;
+    if (btnExcel) btnExcel.disabled = true;
+    if (btnPDF) btnPDF.disabled = true;
+  });
 }
 
 // Genera el reporte de movimientos
 async function generarReporteMovimientos() {
   try {
-    await verificarColumnas('movimientos', ['created_at', 'tipo', 'cantidad', 'producto_id']);
-    
     const startDate = document.getElementById('movimientosStartDate')?.value;
     const endDate = document.getElementById('movimientosEndDate')?.value;
     const productoId = document.getElementById('movimientosProducto')?.value;
@@ -158,9 +145,9 @@ async function generarReporteMovimientos() {
         created_at, 
         tipo, 
         cantidad, 
-        precio,
-        usuario,
-        notas,
+        motivo,
+        usuario_id,
+        destinatario,
         productos(nombre)
       `)
       .order('created_at', { ascending: false });
@@ -185,9 +172,9 @@ async function generarReporteMovimientos() {
             <td>${movimiento.productos?.nombre || '-'}</td>
             <td>${movimiento.tipo}</td>
             <td>${movimiento.cantidad}</td>
-            <td>$${parseFloat(movimiento.precio || 0).toFixed(2)}</td>
-            <td>${movimiento.usuario || '-'}</td>
-            <td>${movimiento.notas || '-'}</td>
+            <td>${movimiento.motivo || '-'}</td>
+            <td>${movimiento.usuario_id ? movimiento.usuario_id.slice(0, 8) : '-'}</td>
+            <td>${movimiento.destinatario || '-'}</td>
           </tr>
         `).join('');
     
@@ -198,110 +185,19 @@ async function generarReporteMovimientos() {
   }
 }
 
-// Genera el reporte de productos
-async function generarReporteProductos() {
-  try {
-    await verificarColumnas('productos', ['nombre', 'categoria', 'stock', 'precio', 'fecha_ingreso']);
-    
-    const startDate = document.getElementById('productosStartDate')?.value;
-    const endDate = document.getElementById('productosEndDate')?.value;
-    
-    let query = supabase
-      .from('productos')
-      .select('*')
-      .order('nombre');
-    
-    if (startDate) query = query.gte('fecha_ingreso', `${startDate}T00:00:00`);
-    if (endDate) query = query.lte('fecha_ingreso', `${endDate}T23:59:59`);
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    const tableBody = document.getElementById('productosTableBody');
-    if (!tableBody) return;
-    
-    tableBody.innerHTML = data.length === 0 
-      ? '<tr><td colspan="7" class="text-center">No se encontraron registros</td></tr>'
-      : data.map(producto => `
-          <tr>
-            <td>${producto.id}</td>
-            <td>${producto.nombre}</td>
-            <td>${producto.categoria || '-'}</td>
-            <td>${producto.stock || '0'}</td>
-            <td>$${parseFloat(producto.precio || 0).toFixed(2)}</td>
-            <td>${formatearFecha(producto.fecha_ingreso)}</td>
-            <td>${producto.descripcion || '-'}</td>
-          </tr>
-        `).join('');
-    
-    mostrarAlerta('Reporte de productos generado exitosamente', 'success');
-  } catch (error) {
-    console.error('Error generando reporte de productos:', error);
-    mostrarAlerta(`Error al generar reporte de productos: ${error.message}`, 'error');
-  }
-}
-
-// Genera el reporte de stock
-async function generarReporteStock() {
-  try {
-    await verificarColumnas('productos', ['nombre', 'categoria', 'stock', 'stock_minimo', 'precio']);
-    
-    const categoria = document.getElementById('stockCategoria')?.value;
-    
-    let query = supabase
-      .from('productos')
-      .select('id, nombre, categoria, stock, stock_minimo, precio')
-      .order('nombre');
-    
-    if (categoria) query = query.eq('categoria', categoria);
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    const tableBody = document.getElementById('stockTableBody');
-    if (!tableBody) return;
-    
-    tableBody.innerHTML = data.length === 0 
-      ? '<tr><td colspan="7" class="text-center">No se encontraron registros</td></tr>'
-      : data.map(producto => {
-          const valorTotal = parseFloat(producto.precio || 0) * parseInt(producto.stock || 0);
-          return `
-            <tr>
-              <td>${producto.id}</td>
-              <td>${producto.nombre}</td>
-              <td>${producto.categoria || '-'}</td>
-              <td>${producto.stock || '0'}</td>
-              <td>${producto.stock_minimo || '0'}</td>
-              <td>$${parseFloat(producto.precio || 0).toFixed(2)}</td>
-              <td>$${valorTotal.toFixed(2)}</td>
-            </tr>
-          `;
-        }).join('');
-    
-    mostrarAlerta('Reporte de stock generado exitosamente', 'success');
-  } catch (error) {
-    console.error('Error generando reporte de stock:', error);
-    mostrarAlerta(`Error al generar reporte de stock: ${error.message}`, 'error');
-  }
-}
-
 // Genera el reporte de proveedores
 async function generarReporteProveedores() {
   try {
-    await verificarColumnas('proveedores', ['nombre', 'contacto', 'telefono', 'email', 'direccion', 'productos_ofrecidos', 'fecha_registro']);
-    
     const startDate = document.getElementById('proveedoresStartDate')?.value;
     const endDate = document.getElementById('proveedoresEndDate')?.value;
     
     let query = supabase
       .from('proveedores')
-      .select('*')
+      .select('id, nombre, contacto, telefono, email, direccion, created_at')
       .order('nombre');
     
-    if (startDate) query = query.gte('fecha_registro', `${startDate}T00:00:00`);
-    if (endDate) query = query.lte('fecha_registro', `${endDate}T23:59:59`);
+    if (startDate) query = query.gte('created_at', `${startDate}T00:00:00`);
+    if (endDate) query = query.lte('created_at', `${endDate}T23:59:59`);
     
     const { data, error } = await query;
     
@@ -320,7 +216,7 @@ async function generarReporteProveedores() {
             <td>${proveedor.telefono || '-'}</td>
             <td>${proveedor.email || '-'}</td>
             <td>${proveedor.direccion || '-'}</td>
-            <td>${proveedor.productos_ofrecidos || '-'}</td>
+            <td>${formatearFecha(proveedor.created_at)}</td>
           </tr>
         `).join('');
     
@@ -348,7 +244,7 @@ async function exportToExcel(tableId, fileName) {
   }
 }
 
-// Exporta a PDF - Versión corregida
+// Exporta a PDF
 async function exportToPDF(tableId, fileName) {
   try {
     const table = document.getElementById(tableId);
@@ -365,7 +261,6 @@ async function exportToPDF(tableId, fileName) {
     mostrarAlerta(`Error al exportar a PDF: ${error.message}`, 'error');
   }
 }
-
 
 // Formatea fechas para visualización
 function formatearFecha(fechaIso) {
