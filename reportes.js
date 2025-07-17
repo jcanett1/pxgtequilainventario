@@ -404,4 +404,3 @@ function formatearFecha(fechaIso) {
     year: 'numeric'
   });
 }
-
