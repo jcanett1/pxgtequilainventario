@@ -303,116 +303,94 @@
     </div>
     
     <!-- Productos Report Card -->
-    <div class="card report-card mb-4">
-      <div class="card-header" data-bs-toggle="collapse" data-bs-target="#collapseProductos">
-        <h5 class="mb-0 d-flex justify-content-between">
-          <span><i class="fas fa-box me-2"></i>Reporte de Productos</span>
-          <i class="fas fa-chevron-down"></i>
-        </h5>
+  <div class="card report-card mb-4">
+  <div class="card-header">
+    <h5><i class="fas fa-box me-2"></i>Reporte de Productos</h5>
+  </div>
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <select class="form-select" id="productosProducto">
+          <option value="">Todos los productos</option>
+        </select>
       </div>
-      <div id="collapseProductos" class="collapse">
-        <div class="report-filters">
-          <div class="row g-3">
-            <div class="col-md-4">
-              <div class="input-group date-range-container">
-                <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                <input type="date" class="form-control" id="productosStartDate">
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="input-group date-range-container">
-                <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                <input type="date" class="form-control" id="productosEndDate">
-              </div>
-            </div>
-            <div class="col-12 d-flex justify-content-end mt-3">
-              <button id="generarReporteProductos" class="btn btn-primary">
-                <i class="fas fa-sync-alt me-1"></i> Generar Reporte
-              </button>
-              <button id="exportProductosExcel" class="btn btn-success export-btn">
-                <i class="fas fa-file-excel me-1"></i> Excel
-              </button>
-              <button id="exportProductosPDF" class="btn btn-danger export-btn">
-                <i class="fas fa-file-pdf me-1"></i> PDF
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-striped" id="productosTable">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
-                  <th>Categoría</th>
-                  <th>Stock</th>
-                  <th>Precio</th>
-                  <th>Fecha de ingreso</th>
-                  <th>Descripción</th>
-                </tr>
-              </thead>
-              <tbody id="productosTableBody">
-                <!-- Will be populated by JS -->
-              </tbody>
-            </table>
-          </div>
-        </div>
+      <div class="col-md-6">
+        <select class="form-select" id="productosCategoria">
+          <option value="">Todas las categorías</option>
+        </select>
+      </div>
+      <div class="col-12 d-flex justify-content-end">
+        <button id="generarReporteProductos" class="btn btn-primary me-2">
+          <i class="fas fa-sync-alt me-1"></i> Generar
+        </button>
+        <button id="exportProductosExcel" class="btn btn-success me-2">
+          <i class="fas fa-file-excel me-1"></i> Excel
+        </button>
+        <button id="exportProductosPDF" class="btn btn-danger">
+          <i class="fas fa-file-pdf me-1"></i> PDF
+        </button>
       </div>
     </div>
+    <div class="table-responsive">
+      <table class="table table-striped" id="productosTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Stock</th>
+            <th>Precio</th>
+            <th>Fecha Ingreso</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody id="productosTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
     
-    <!-- Stock Report Card -->
-    <div class="card report-card mb-4">
-      <div class="card-header" data-bs-toggle="collapse" data-bs-target="#collapseStock">
-        <h5 class="mb-0 d-flex justify-content-between">
-          <span><i class="fas fa-warehouse me-2"></i>Reporte de Stock</span>
-          <i class="fas fa-chevron-down"></i>
-        </h5>
+   <div class="card report-card mb-4">
+  <div class="card-header">
+    <h5><i class="fas fa-warehouse me-2"></i>Reporte de Stock</h5>
+  </div>
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-md-8">
+        <select class="form-select" id="stockProducto">
+          <option value="">Todos los productos</option>
+        </select>
       </div>
-      <div id="collapseStock" class="collapse">
-        <div class="report-filters">
-          <div class="row g-3">
-            <div class="col-md-8">
-              <select class="form-select" id="stockCategoria">
-                <option value="">Todas las categorías</option>
-                <!-- Will be populated dynamically -->
-              </select>
-            </div>
-            <div class="col-12 d-flex justify-content-end mt-3">
-              <button id="generarReporteStock" class="btn btn-primary">
-                <i class="fas fa-sync-alt me-1"></i> Generar Reporte
-              </button>
-              <button id="exportStockExcel" class="btn btn-success export-btn">
-                <i class="fas fa-file-excel me-1"></i> Excel
-              </button>
-              <button id="exportStockPDF" class="btn btn-danger export-btn">
-                <i class="fas fa-file-pdf me-1"></i> PDF
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-striped" id="stockTable">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Producto</th>
-                  <th>Categoría</th>
-                  <th>Stock Actual</th>
-                  <th>Stock Mínimo</th>
-                  <th>Valor Unitario</th>
-                  <th>Valor Total</th>
-                </tr>
-              </thead>
-              <tbody id="stockTableBody">
-                <!-- Will be populated by JS -->
-              </tbody>
-            </table>
-          </div>
-        </div>
+      <div class="col-12 d-flex justify-content-end">
+        <button id="generarReporteStock" class="btn btn-primary me-2">
+          <i class="fas fa-sync-alt me-1"></i> Generar
+        </button>
+        <button id="exportStockExcel" class="btn btn-success me-2">
+          <i class="fas fa-file-excel me-1"></i> Excel
+        </button>
+        <button id="exportStockPDF" class="btn btn-danger">
+          <i class="fas fa-file-pdf me-1"></i> PDF
+        </button>
       </div>
     </div>
+    <div class="table-responsive">
+      <table class="table table-striped" id="stockTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th>Stock Actual</th>
+            <th>Stock Mínimo</th>
+            <th>Precio Unitario</th>
+            <th>Valor Total</th>
+          </tr>
+        </thead>
+        <tbody id="stockTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
     
     <!-- Proveedores Report Card -->
     <div class="card report-card mb-4">
