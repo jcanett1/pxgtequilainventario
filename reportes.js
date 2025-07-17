@@ -14,6 +14,18 @@ document.addEventListener('DOMContentLoaded', function() {
   setDefaultDateRange();
 });
 
+// Función de alerta (que faltaba)
+function mostrarAlerta(mensaje, tipo) {
+  Swal.fire({
+    title: mensaje,
+    icon: tipo,
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000
+  });
+}
+
 function setDefaultDateRange() {
   const endDate = new Date();
   const startDate = new Date();
@@ -91,6 +103,7 @@ function attachEventHandlers() {
   document.getElementById('exportProveedoresPDF').addEventListener('click', () => exportToPDF('proveedoresTable', 'Reporte_Proveedores'));
 }
 
+// Función corregida para generar reporte de movimientos
 async function generarReporteMovimientos() {
   try {
     const startDate = document.getElementById('movimientosStartDate').value;
@@ -101,7 +114,7 @@ async function generarReporteMovimientos() {
       .from('movimientos')
       .select(`
         id, 
-        fecha, 
+        created_at, 
         tipo, 
         cantidad, 
         precio,
@@ -109,17 +122,17 @@ async function generarReporteMovimientos() {
         notas,
         productos(nombre)
       `)
-      .order('fecha', { ascending: false });
+      .order('created_at', { ascending: false });
     
-    // Apply filters if they exist
+    // Aplicar filtros si existen
     if (startDate) {
       const formattedStartDate = formatDateForQuery(startDate);
-      query = query.gte('fecha', formattedStartDate);
+      query = query.gte('created_at', formattedStartDate);
     }
     
     if (endDate) {
       const formattedEndDate = formatDateForQuery(endDate, true);
-      query = query.lte('fecha', formattedEndDate);
+      query = query.lte('created_at', formattedEndDate);
     }
     
     if (productoId) {
@@ -142,7 +155,7 @@ async function generarReporteMovimientos() {
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${movimiento.id}</td>
-        <td>${formatearFecha(movimiento.fecha)}</td>
+        <td>${formatearFecha(movimiento.created_at)}</td>
         <td>${movimiento.productos?.nombre || '-'}</td>
         <td>${movimiento.tipo}</td>
         <td>${movimiento.cantidad}</td>
@@ -156,9 +169,31 @@ async function generarReporteMovimientos() {
     mostrarAlerta('Reporte generado exitosamente', 'success');
   } catch (error) {
     console.error('Error generating movimientos report:', error);
-    mostrarAlerta('Error al generar reporte de movimientos', 'error');
+    mostrarAlerta(`Error al generar reporte: ${error.message}`, 'error');
   }
 }
+
+// Función para formatear fechas en consultas
+function formatDateForQuery(dateStr, isEndDate = false) {
+  if (!dateStr) return null;
+  
+  // Asegurarse que la fecha viene en formato YYYY-MM-DD
+  if (isEndDate) {
+    return `${dateStr}T23:59:59`;
+  } else {
+    return `${dateStr}T00:00:00`;
+  }
+}
+
+// Función para formatear fechas para visualización
+function formatearFecha(fechaIso) {
+  if (!fechaIso) return '-';
+  const fecha = new Date(fechaIso);
+  return fecha.toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 
 async function generarReporteProductos() {
   try {
