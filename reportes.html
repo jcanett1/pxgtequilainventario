@@ -126,8 +126,8 @@
       margin: 0 0.15rem;
     }
     
-    .welcome-section {
-      background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://cdn.pixabay.com/photo/2018/01/09/11/04/tequila-3071275_1280.jpg');
+     .welcome-section {
+      background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://logodix.com/logo/1358425.png');
       background-size: cover;
       background-position: center;
       color: white;
@@ -158,13 +158,58 @@
         padding: 1.5rem;
       }
     }
+
+    /* Add stock level color classes */
+    .stock-low { 
+      background-color: rgba(255, 0, 0, 0.1) !important; 
+    }
+    .stock-medium { 
+      background-color: rgba(255, 165, 0, 0.1) !important; 
+    }
+    .stock-high { 
+      background-color: rgba(0, 128, 0, 0.1) !important; 
+    }
+
+    /* Add dashboard specific styles */
+    .metrics-card {
+      padding: 1.5rem;
+      text-align: center;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+    
+    .metrics-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .metrics-card i {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: var(--primary-color);
+    }
+    
+    .metrics-value {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+    
+    .metrics-label {
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 2rem;
+    }
   </style>
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark mb-4">
     <div class="container">
       <a class="navbar-brand" href="index.html">
-        <img src="https://cdn.pixabay.com/photo/2014/04/03/00/42/tequila-309425_640.png" alt="PXG Tequila Logo" width="30" height="30" class="d-inline-block align-text-top">
+        <img src="https://logodix.com/logo/1358425.png" alt="PXG Tequila Logo" width="30" height="30" class="d-inline-block align-text-top">
         PXG Tequila Inventarios
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
