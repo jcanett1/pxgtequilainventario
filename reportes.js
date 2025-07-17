@@ -398,9 +398,10 @@ function formatDateForQuery(dateStr, isEndDate = false) {
 function formatearFecha(fechaIso) {
   if (!fechaIso) return '-';
   const fecha = new Date(fechaIso);
-  return new Intl.DateTimeFormat('es-MX', { 
+  return fecha.toLocaleDateString('es-MX', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'
-  }).format(fecha);
+  });
 }
+
