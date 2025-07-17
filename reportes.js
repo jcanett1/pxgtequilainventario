@@ -1,4 +1,4 @@
-// js/reportes.js
+// js/reportes.js - Versión mejorada
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Swal from 'sweetalert2'
 
@@ -8,55 +8,33 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 document.addEventListener('DOMContentLoaded', function() {
-  initializeDatePickers();
   loadFiltersData();
   attachEventHandlers();
+  // Establecer fechas por defecto (últimos 30 días)
+  setDefaultDateRange();
 });
 
-function initializeDatePickers() {
-  // Initialize all date pickers
-  const datePickerOptions = {
-    autoUpdateInput: false,
-    locale: {
-      cancelLabel: 'Limpiar',
-      applyLabel: 'Aplicar',
-      format: 'DD/MM/YYYY'
-    }
-  };
+function setDefaultDateRange() {
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 30);
   
-  // Initialize for each report section
+  // Formatear como YYYY-MM-DD (formato nativo de input date)
+  const formatDate = (date) => date.toISOString().split('T')[0];
+  
   ['movimientos', 'productos', 'proveedores'].forEach(section => {
-    $(`#${section}StartDate`).daterangepicker({
-      singleDatePicker: true,
-      ...datePickerOptions
-    });
-    
-    $(`#${section}EndDate`).daterangepicker({
-      singleDatePicker: true,
-      ...datePickerOptions
-    });
-    
-    $(`#${section}StartDate`).on('apply.daterangepicker', function(ev, picker) {
-      $(this).val(picker.startDate.format('DD/MM/YYYY'));
-    });
-    
-    $(`#${section}EndDate`).on('apply.daterangepicker', function(ev, picker) {
-      $(this).val(picker.endDate.format('DD/MM/YYYY'));
-    });
-    
-    $(`#${section}StartDate, #${section}EndDate`).on('cancel.daterangepicker', function() {
-      $(this).val('');
-    });
+    document.getElementById(`${section}StartDate`).value = formatDate(startDate);
+    document.getElementById(`${section}EndDate`).value = formatDate(endDate);
   });
 }
 
 async function loadFiltersData() {
   try {
-    // Load products for movimientos filter
+    // Cargar productos para filtro de movimientos
     const { data: productos, error: productosError } = await supabase
       .from('productos')
       .select('id, nombre')
-      .order('nombre');
+      .order('nombre', { ascending: true });
       
     if (productosError) throw productosError;
     
@@ -68,30 +46,28 @@ async function loadFiltersData() {
       productoSelect.appendChild(option);
     });
     
-    // Load categories for stock filter
+    // Cargar categorías para filtro de stock
     const { data: categorias, error: categoriasError } = await supabase
-      .from('productos')
-      .select('categoria')
-      .not('categoria', 'is', null);
+      .from('categorias')
+      .select('id, nombre')
+      .order('nombre', { ascending: true });
       
     if (categoriasError) throw categoriasError;
     
-    // Extract unique categories
-    const uniqueCategorias = [...new Set(categorias.map(item => item.categoria))];
-    
     const categoriaSelect = document.getElementById('stockCategoria');
-    uniqueCategorias.forEach(categoria => {
+    categorias.forEach(categoria => {
       const option = document.createElement('option');
-      option.value = categoria;
-      option.textContent = categoria;
+      option.value = categoria.id;
+      option.textContent = categoria.nombre;
       categoriaSelect.appendChild(option);
     });
     
   } catch (error) {
-    console.error('Error loading filter data:', error);
+    console.error('Error cargando datos de filtros:', error);
     mostrarAlerta('Error al cargar datos de filtros', 'error');
   }
 }
+
 
 function attachEventHandlers() {
   // Movimientos report
@@ -392,20 +368,4 @@ function formatearFecha(fechaIso) {
     month: '2-digit',
     year: 'numeric'
   }).format(fecha);
-}
-
-function formatDateFileName() {
-  const now = new Date();
-  return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-}
-
-function mostrarAlerta(mensaje, tipo) {
-  Swal.fire({
-    title: mensaje,
-    icon: tipo,
-    toast: true,
-    position: 'top-end',
-    showConfirmButton: false,
-    timer: 3000
-  });
 }
