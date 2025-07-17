@@ -1,4 +1,4 @@
-// js/reportes.js - Versión mejorada
+// js/reportes.js - Versión completa y corregida
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Swal from 'sweetalert2'
 
@@ -10,11 +10,10 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 document.addEventListener('DOMContentLoaded', function() {
   loadFiltersData();
   attachEventHandlers();
-  // Establecer fechas por defecto (últimos 30 días)
   setDefaultDateRange();
 });
 
-// Función de alerta (que faltaba)
+// Función para mostrar alertas
 function mostrarAlerta(mensaje, tipo) {
   Swal.fire({
     title: mensaje,
@@ -26,12 +25,12 @@ function mostrarAlerta(mensaje, tipo) {
   });
 }
 
+// Establece el rango de fechas por defecto (últimos 30 días)
 function setDefaultDateRange() {
   const endDate = new Date();
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 30);
   
-  // Formatear como YYYY-MM-DD (formato nativo de input date)
   const formatDate = (date) => date.toISOString().split('T')[0];
   
   ['movimientos', 'productos', 'proveedores'].forEach(section => {
@@ -40,6 +39,7 @@ function setDefaultDateRange() {
   });
 }
 
+// Carga los datos para los filtros
 async function loadFiltersData() {
   try {
     // Cargar productos para filtro de movimientos
@@ -80,30 +80,30 @@ async function loadFiltersData() {
   }
 }
 
-
+// Asigna los manejadores de eventos
 function attachEventHandlers() {
-  // Movimientos report
+  // Reporte de movimientos
   document.getElementById('generarReporteMovimientos').addEventListener('click', generarReporteMovimientos);
   document.getElementById('exportMovimientosExcel').addEventListener('click', () => exportToExcel('movimientosTable', 'Reporte_Movimientos'));
   document.getElementById('exportMovimientosPDF').addEventListener('click', () => exportToPDF('movimientosTable', 'Reporte_Movimientos'));
   
-  // Productos report
+  // Reporte de productos
   document.getElementById('generarReporteProductos').addEventListener('click', generarReporteProductos);
   document.getElementById('exportProductosExcel').addEventListener('click', () => exportToExcel('productosTable', 'Reporte_Productos'));
   document.getElementById('exportProductosPDF').addEventListener('click', () => exportToPDF('productosTable', 'Reporte_Productos'));
   
-  // Stock report
+  // Reporte de stock
   document.getElementById('generarReporteStock').addEventListener('click', generarReporteStock);
   document.getElementById('exportStockExcel').addEventListener('click', () => exportToExcel('stockTable', 'Reporte_Stock'));
   document.getElementById('exportStockPDF').addEventListener('click', () => exportToPDF('stockTable', 'Reporte_Stock'));
   
-  // Proveedores report
+  // Reporte de proveedores
   document.getElementById('generarReporteProveedores').addEventListener('click', generarReporteProveedores);
   document.getElementById('exportProveedoresExcel').addEventListener('click', () => exportToExcel('proveedoresTable', 'Reporte_Proveedores'));
   document.getElementById('exportProveedoresPDF').addEventListener('click', () => exportToPDF('proveedoresTable', 'Reporte_Proveedores'));
 }
 
-// Función corregida para generar reporte de movimientos
+// Genera el reporte de movimientos
 async function generarReporteMovimientos() {
   try {
     const startDate = document.getElementById('movimientosStartDate').value;
@@ -124,77 +124,38 @@ async function generarReporteMovimientos() {
       `)
       .order('created_at', { ascending: false });
     
-    // Aplicar filtros si existen
-    if (startDate) {
-      const formattedStartDate = formatDateForQuery(startDate);
-      query = query.gte('created_at', formattedStartDate);
-    }
-    
-    if (endDate) {
-      const formattedEndDate = formatDateForQuery(endDate, true);
-      query = query.lte('created_at', formattedEndDate);
-    }
-    
-    if (productoId) {
-      query = query.eq('producto_id', productoId);
-    }
+    if (startDate) query = query.gte('created_at', `${startDate}T00:00:00`);
+    if (endDate) query = query.lte('created_at', `${endDate}T23:59:59`);
+    if (productoId) query = query.eq('producto_id', productoId);
     
     const { data, error } = await query;
     
     if (error) throw error;
     
     const tableBody = document.getElementById('movimientosTableBody');
-    tableBody.innerHTML = '';
+    tableBody.innerHTML = data.length === 0 
+      ? '<tr><td colspan="8" class="text-center">No se encontraron registros</td></tr>'
+      : data.map(movimiento => `
+          <tr>
+            <td>${movimiento.id}</td>
+            <td>${formatearFecha(movimiento.created_at)}</td>
+            <td>${movimiento.productos?.nombre || '-'}</td>
+            <td>${movimiento.tipo}</td>
+            <td>${movimiento.cantidad}</td>
+            <td>$${parseFloat(movimiento.precio || 0).toFixed(2)}</td>
+            <td>${movimiento.usuario || '-'}</td>
+            <td>${movimiento.notas || '-'}</td>
+          </tr>
+        `).join('');
     
-    if (data.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="8" class="text-center">No se encontraron registros</td></tr>';
-      return;
-    }
-    
-    data.forEach(movimiento => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${movimiento.id}</td>
-        <td>${formatearFecha(movimiento.created_at)}</td>
-        <td>${movimiento.productos?.nombre || '-'}</td>
-        <td>${movimiento.tipo}</td>
-        <td>${movimiento.cantidad}</td>
-        <td>$${parseFloat(movimiento.precio || 0).toFixed(2)}</td>
-        <td>${movimiento.usuario || '-'}</td>
-        <td>${movimiento.notas || '-'}</td>
-      `;
-      tableBody.appendChild(row);
-    });
-    
-    mostrarAlerta('Reporte generado exitosamente', 'success');
+    mostrarAlerta('Reporte de movimientos generado exitosamente', 'success');
   } catch (error) {
-    console.error('Error generating movimientos report:', error);
+    console.error('Error generando reporte de movimientos:', error);
     mostrarAlerta(`Error al generar reporte: ${error.message}`, 'error');
   }
 }
 
-// Función para formatear fechas en consultas
-function formatDateForQuery(dateStr, isEndDate = false) {
-  if (!dateStr) return null;
-  
-  // Asegurarse que la fecha viene en formato YYYY-MM-DD
-  if (isEndDate) {
-    return `${dateStr}T23:59:59`;
-  } else {
-    return `${dateStr}T00:00:00`;
-  }
-}
-
-// Función para formatear fechas para visualización
-function formatearFecha(fechaIso) {
-  if (!fechaIso) return '-';
-  const fecha = new Date(fechaIso);
-  return fecha.toLocaleDateString('es-MX', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-
+// Genera el reporte de productos
 async function generarReporteProductos() {
   try {
     const startDate = document.getElementById('productosStartDate').value;
@@ -205,50 +166,36 @@ async function generarReporteProductos() {
       .select('*')
       .order('nombre');
     
-    // Apply filters if they exist
-    if (startDate) {
-      const formattedStartDate = formatDateForQuery(startDate);
-      query = query.gte('fecha_ingreso', formattedStartDate);
-    }
-    
-    if (endDate) {
-      const formattedEndDate = formatDateForQuery(endDate, true);
-      query = query.lte('fecha_ingreso', formattedEndDate);
-    }
+    if (startDate) query = query.gte('fecha_ingreso', `${startDate}T00:00:00`);
+    if (endDate) query = query.lte('fecha_ingreso', `${endDate}T23:59:59`);
     
     const { data, error } = await query;
     
     if (error) throw error;
     
     const tableBody = document.getElementById('productosTableBody');
-    tableBody.innerHTML = '';
+    tableBody.innerHTML = data.length === 0 
+      ? '<tr><td colspan="7" class="text-center">No se encontraron registros</td></tr>'
+      : data.map(producto => `
+          <tr>
+            <td>${producto.id}</td>
+            <td>${producto.nombre}</td>
+            <td>${producto.categoria || '-'}</td>
+            <td>${producto.stock || '0'}</td>
+            <td>$${parseFloat(producto.precio || 0).toFixed(2)}</td>
+            <td>${formatearFecha(producto.fecha_ingreso)}</td>
+            <td>${producto.descripcion || '-'}</td>
+          </tr>
+        `).join('');
     
-    if (data.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron registros</td></tr>';
-      return;
-    }
-    
-    data.forEach(producto => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${producto.id}</td>
-        <td>${producto.nombre}</td>
-        <td>${producto.categoria || '-'}</td>
-        <td>${producto.stock || '0'}</td>
-        <td>$${parseFloat(producto.precio || 0).toFixed(2)}</td>
-        <td>${formatearFecha(producto.fecha_ingreso)}</td>
-        <td>${producto.descripcion || '-'}</td>
-      `;
-      tableBody.appendChild(row);
-    });
-    
-    mostrarAlerta('Reporte generado exitosamente', 'success');
+    mostrarAlerta('Reporte de productos generado exitosamente', 'success');
   } catch (error) {
-    console.error('Error generating productos report:', error);
+    console.error('Error generando reporte de productos:', error);
     mostrarAlerta('Error al generar reporte de productos', 'error');
   }
 }
 
+// Genera el reporte de stock
 async function generarReporteStock() {
   try {
     const categoria = document.getElementById('stockCategoria').value;
@@ -258,45 +205,38 @@ async function generarReporteStock() {
       .select('id, nombre, categoria, stock, stock_minimo, precio')
       .order('nombre');
     
-    if (categoria) {
-      query = query.eq('categoria', categoria);
-    }
+    if (categoria) query = query.eq('categoria', categoria);
     
     const { data, error } = await query;
     
     if (error) throw error;
     
     const tableBody = document.getElementById('stockTableBody');
-    tableBody.innerHTML = '';
+    tableBody.innerHTML = data.length === 0 
+      ? '<tr><td colspan="7" class="text-center">No se encontraron registros</td></tr>'
+      : data.map(producto => {
+          const valorTotal = parseFloat(producto.precio || 0) * parseInt(producto.stock || 0);
+          return `
+            <tr>
+              <td>${producto.id}</td>
+              <td>${producto.nombre}</td>
+              <td>${producto.categoria || '-'}</td>
+              <td>${producto.stock || '0'}</td>
+              <td>${producto.stock_minimo || '0'}</td>
+              <td>$${parseFloat(producto.precio || 0).toFixed(2)}</td>
+              <td>$${valorTotal.toFixed(2)}</td>
+            </tr>
+          `;
+        }).join('');
     
-    if (data.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron registros</td></tr>';
-      return;
-    }
-    
-    data.forEach(producto => {
-      const valorTotal = parseFloat(producto.precio || 0) * parseInt(producto.stock || 0);
-      
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${producto.id}</td>
-        <td>${producto.nombre}</td>
-        <td>${producto.categoria || '-'}</td>
-        <td>${producto.stock || '0'}</td>
-        <td>${producto.stock_minimo || '0'}</td>
-        <td>$${parseFloat(producto.precio || 0).toFixed(2)}</td>
-        <td>$${valorTotal.toFixed(2)}</td>
-      `;
-      tableBody.appendChild(row);
-    });
-    
-    mostrarAlerta('Reporte generado exitosamente', 'success');
+    mostrarAlerta('Reporte de stock generado exitosamente', 'success');
   } catch (error) {
-    console.error('Error generating stock report:', error);
+    console.error('Error generando reporte de stock:', error);
     mostrarAlerta('Error al generar reporte de stock', 'error');
   }
 }
 
+// Genera el reporte de proveedores
 async function generarReporteProveedores() {
   try {
     const startDate = document.getElementById('proveedoresStartDate').value;
@@ -307,94 +247,64 @@ async function generarReporteProveedores() {
       .select('*')
       .order('nombre');
     
-    // Apply filters if they exist
-    if (startDate) {
-      const formattedStartDate = formatDateForQuery(startDate);
-      query = query.gte('fecha_registro', formattedStartDate);
-    }
-    
-    if (endDate) {
-      const formattedEndDate = formatDateForQuery(endDate, true);
-      query = query.lte('fecha_registro', formattedEndDate);
-    }
+    if (startDate) query = query.gte('fecha_registro', `${startDate}T00:00:00`);
+    if (endDate) query = query.lte('fecha_registro', `${endDate}T23:59:59`);
     
     const { data, error } = await query;
     
     if (error) throw error;
     
     const tableBody = document.getElementById('proveedoresTableBody');
-    tableBody.innerHTML = '';
+    tableBody.innerHTML = data.length === 0 
+      ? '<tr><td colspan="7" class="text-center">No se encontraron registros</td></tr>'
+      : data.map(proveedor => `
+          <tr>
+            <td>${proveedor.id}</td>
+            <td>${proveedor.nombre}</td>
+            <td>${proveedor.contacto || '-'}</td>
+            <td>${proveedor.telefono || '-'}</td>
+            <td>${proveedor.email || '-'}</td>
+            <td>${proveedor.direccion || '-'}</td>
+            <td>${proveedor.productos_ofrecidos || '-'}</td>
+          </tr>
+        `).join('');
     
-    if (data.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron registros</td></tr>';
-      return;
-    }
-    
-    data.forEach(proveedor => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${proveedor.id}</td>
-        <td>${proveedor.nombre}</td>
-        <td>${proveedor.contacto || '-'}</td>
-        <td>${proveedor.telefono || '-'}</td>
-        <td>${proveedor.email || '-'}</td>
-        <td>${proveedor.direccion || '-'}</td>
-        <td>${proveedor.productos_ofrecidos || '-'}</td>
-      `;
-      tableBody.appendChild(row);
-    });
-    
-    mostrarAlerta('Reporte generado exitosamente', 'success');
+    mostrarAlerta('Reporte de proveedores generado exitosamente', 'success');
   } catch (error) {
-    console.error('Error generating proveedores report:', error);
+    console.error('Error generando reporte de proveedores:', error);
     mostrarAlerta('Error al generar reporte de proveedores', 'error');
   }
 }
 
+// Exporta a Excel
 function exportToExcel(tableId, fileName) {
   try {
     const table = document.getElementById(tableId);
     const wb = XLSX.utils.table_to_book(table);
-    XLSX.writeFile(wb, `${fileName}_${formatDateFileName()}.xlsx`);
-    
+    XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().slice(0,10)}.xlsx`);
     mostrarAlerta('Archivo Excel generado correctamente', 'success');
   } catch (error) {
-    console.error('Error exporting to Excel:', error);
+    console.error('Error exportando a Excel:', error);
     mostrarAlerta('Error al exportar a Excel', 'error');
   }
 }
 
+// Exporta a PDF
 function exportToPDF(tableId, fileName) {
   try {
     const { jsPDF } = window.jspdf;
     const { autoTable } = window.jspdf.autoTable;
-    
     const doc = new jsPDF();
     autoTable(doc, { html: `#${tableId}` });
-    doc.save(`${fileName}_${formatDateFileName()}.pdf`);
-    
+    doc.save(`${fileName}_${new Date().toISOString().slice(0,10)}.pdf`);
     mostrarAlerta('Archivo PDF generado correctamente', 'success');
   } catch (error) {
-    console.error('Error exporting to PDF:', error);
+    console.error('Error exportando a PDF:', error);
     mostrarAlerta('Error al exportar a PDF', 'error');
   }
 }
 
-function formatDateForQuery(dateStr, isEndDate = false) {
-  // Convert DD/MM/YYYY to YYYY-MM-DD
-  const parts = dateStr.split('/');
-  let formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-  
-  // If it's an end date, set it to the end of the day
-  if (isEndDate) {
-    formattedDate += 'T23:59:59';
-  } else {
-    formattedDate += 'T00:00:00';
-  }
-  
-  return formattedDate;
-}
-
+// Formatea fechas para visualización
 function formatearFecha(fechaIso) {
   if (!fechaIso) return '-';
   const fecha = new Date(fechaIso);
