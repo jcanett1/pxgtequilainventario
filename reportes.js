@@ -1,6 +1,9 @@
-// js/reportes.js - Versión completa y corregida
+// js/reportes.js - Versión corregida y completa
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Swal from 'sweetalert2'
+import * as XLSX from 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm'
+import { jsPDF } from 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+import 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js'
 
 // Configuración de Supabase
 const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co'
@@ -34,8 +37,13 @@ function setDefaultDateRange() {
   const formatDate = (date) => date.toISOString().split('T')[0];
   
   ['movimientos', 'productos', 'proveedores'].forEach(section => {
-    document.getElementById(`${section}StartDate`).value = formatDate(startDate);
-    document.getElementById(`${section}EndDate`).value = formatDate(endDate);
+    const startElement = document.getElementById(`${section}StartDate`);
+    const endElement = document.getElementById(`${section}EndDate`);
+    
+    if (startElement && endElement) {
+      startElement.value = formatDate(startDate);
+      endElement.value = formatDate(endDate);
+    }
   });
 }
 
@@ -51,12 +59,14 @@ async function loadFiltersData() {
     if (productosError) throw productosError;
     
     const productoSelect = document.getElementById('movimientosProducto');
-    productos.forEach(producto => {
-      const option = document.createElement('option');
-      option.value = producto.id;
-      option.textContent = producto.nombre;
-      productoSelect.appendChild(option);
-    });
+    if (productoSelect) {
+      productos.forEach(producto => {
+        const option = document.createElement('option');
+        option.value = producto.id;
+        option.textContent = producto.nombre;
+        productoSelect.appendChild(option);
+      });
+    }
     
     // Cargar categorías para filtro de stock
     const { data: categorias, error: categoriasError } = await supabase
@@ -67,12 +77,14 @@ async function loadFiltersData() {
     if (categoriasError) throw categoriasError;
     
     const categoriaSelect = document.getElementById('stockCategoria');
-    categorias.forEach(categoria => {
-      const option = document.createElement('option');
-      option.value = categoria.id;
-      option.textContent = categoria.nombre;
-      categoriaSelect.appendChild(option);
-    });
+    if (categoriaSelect) {
+      categorias.forEach(categoria => {
+        const option = document.createElement('option');
+        option.value = categoria.id;
+        option.textContent = categoria.nombre;
+        categoriaSelect.appendChild(option);
+      });
+    }
     
   } catch (error) {
     console.error('Error cargando datos de filtros:', error);
@@ -82,33 +94,62 @@ async function loadFiltersData() {
 
 // Asigna los manejadores de eventos
 function attachEventHandlers() {
+  // Verificar existencia de elementos antes de agregar event listeners
+  const addListener = (id, event, handler) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.addEventListener(event, handler);
+    }
+  };
+
   // Reporte de movimientos
-  document.getElementById('generarReporteMovimientos').addEventListener('click', generarReporteMovimientos);
-  document.getElementById('exportMovimientosExcel').addEventListener('click', () => exportToExcel('movimientosTable', 'Reporte_Movimientos'));
-  document.getElementById('exportMovimientosPDF').addEventListener('click', () => exportToPDF('movimientosTable', 'Reporte_Movimientos'));
+  addListener('generarReporteMovimientos', 'click', generarReporteMovimientos);
+  addListener('exportMovimientosExcel', 'click', () => exportToExcel('movimientosTable', 'Reporte_Movimientos'));
+  addListener('exportMovimientosPDF', 'click', () => exportToPDF('movimientosTable', 'Reporte_Movimientos'));
   
   // Reporte de productos
-  document.getElementById('generarReporteProductos').addEventListener('click', generarReporteProductos);
-  document.getElementById('exportProductosExcel').addEventListener('click', () => exportToExcel('productosTable', 'Reporte_Productos'));
-  document.getElementById('exportProductosPDF').addEventListener('click', () => exportToPDF('productosTable', 'Reporte_Productos'));
+  addListener('generarReporteProductos', 'click', generarReporteProductos);
+  addListener('exportProductosExcel', 'click', () => exportToExcel('productosTable', 'Reporte_Productos'));
+  addListener('exportProductosPDF', 'click', () => exportToPDF('productosTable', 'Reporte_Productos'));
   
   // Reporte de stock
-  document.getElementById('generarReporteStock').addEventListener('click', generarReporteStock);
-  document.getElementById('exportStockExcel').addEventListener('click', () => exportToExcel('stockTable', 'Reporte_Stock'));
-  document.getElementById('exportStockPDF').addEventListener('click', () => exportToPDF('stockTable', 'Reporte_Stock'));
+  addListener('generarReporteStock', 'click', generarReporteStock);
+  addListener('exportStockExcel', 'click', () => exportToExcel('stockTable', 'Reporte_Stock'));
+  addListener('exportStockPDF', 'click', () => exportToPDF('stockTable', 'Reporte_Stock'));
   
   // Reporte de proveedores
-  document.getElementById('generarReporteProveedores').addEventListener('click', generarReporteProveedores);
-  document.getElementById('exportProveedoresExcel').addEventListener('click', () => exportToExcel('proveedoresTable', 'Reporte_Proveedores'));
-  document.getElementById('exportProveedoresPDF').addEventListener('click', () => exportToPDF('proveedoresTable', 'Reporte_Proveedores'));
+  addListener('generarReporteProveedores', 'click', generarReporteProveedores);
+  addListener('exportProveedoresExcel', 'click', () => exportToExcel('proveedoresTable', 'Reporte_Proveedores'));
+  addListener('exportProveedoresPDF', 'click', () => exportToPDF('proveedoresTable', 'Reporte_Proveedores'));
+}
+
+// Función auxiliar para verificar columnas
+async function verificarColumnas(tabla, columnasRequeridas) {
+  const { data, error } = await supabase
+    .from(tabla)
+    .select('*')
+    .limit(1);
+  
+  if (error) throw error;
+  
+  if (data.length > 0) {
+    const columnasExistentes = Object.keys(data[0]);
+    const columnasFaltantes = columnasRequeridas.filter(col => !columnasExistentes.includes(col));
+    
+    if (columnasFaltantes.length > 0) {
+      throw new Error(`Las siguientes columnas no existen en la tabla ${tabla}: ${columnasFaltantes.join(', ')}`);
+    }
+  }
 }
 
 // Genera el reporte de movimientos
 async function generarReporteMovimientos() {
   try {
-    const startDate = document.getElementById('movimientosStartDate').value;
-    const endDate = document.getElementById('movimientosEndDate').value;
-    const productoId = document.getElementById('movimientosProducto').value;
+    await verificarColumnas('movimientos', ['created_at', 'tipo', 'cantidad', 'producto_id']);
+    
+    const startDate = document.getElementById('movimientosStartDate')?.value;
+    const endDate = document.getElementById('movimientosEndDate')?.value;
+    const productoId = document.getElementById('movimientosProducto')?.value;
     
     let query = supabase
       .from('movimientos')
@@ -133,6 +174,8 @@ async function generarReporteMovimientos() {
     if (error) throw error;
     
     const tableBody = document.getElementById('movimientosTableBody');
+    if (!tableBody) return;
+    
     tableBody.innerHTML = data.length === 0 
       ? '<tr><td colspan="8" class="text-center">No se encontraron registros</td></tr>'
       : data.map(movimiento => `
@@ -151,15 +194,17 @@ async function generarReporteMovimientos() {
     mostrarAlerta('Reporte de movimientos generado exitosamente', 'success');
   } catch (error) {
     console.error('Error generando reporte de movimientos:', error);
-    mostrarAlerta(`Error al generar reporte: ${error.message}`, 'error');
+    mostrarAlerta(`Error al generar reporte de movimientos: ${error.message}`, 'error');
   }
 }
 
 // Genera el reporte de productos
 async function generarReporteProductos() {
   try {
-    const startDate = document.getElementById('productosStartDate').value;
-    const endDate = document.getElementById('productosEndDate').value;
+    await verificarColumnas('productos', ['nombre', 'categoria', 'stock', 'precio', 'fecha_ingreso']);
+    
+    const startDate = document.getElementById('productosStartDate')?.value;
+    const endDate = document.getElementById('productosEndDate')?.value;
     
     let query = supabase
       .from('productos')
@@ -174,6 +219,8 @@ async function generarReporteProductos() {
     if (error) throw error;
     
     const tableBody = document.getElementById('productosTableBody');
+    if (!tableBody) return;
+    
     tableBody.innerHTML = data.length === 0 
       ? '<tr><td colspan="7" class="text-center">No se encontraron registros</td></tr>'
       : data.map(producto => `
@@ -191,14 +238,16 @@ async function generarReporteProductos() {
     mostrarAlerta('Reporte de productos generado exitosamente', 'success');
   } catch (error) {
     console.error('Error generando reporte de productos:', error);
-    mostrarAlerta('Error al generar reporte de productos', 'error');
+    mostrarAlerta(`Error al generar reporte de productos: ${error.message}`, 'error');
   }
 }
 
 // Genera el reporte de stock
 async function generarReporteStock() {
   try {
-    const categoria = document.getElementById('stockCategoria').value;
+    await verificarColumnas('productos', ['nombre', 'categoria', 'stock', 'stock_minimo', 'precio']);
+    
+    const categoria = document.getElementById('stockCategoria')?.value;
     
     let query = supabase
       .from('productos')
@@ -212,6 +261,8 @@ async function generarReporteStock() {
     if (error) throw error;
     
     const tableBody = document.getElementById('stockTableBody');
+    if (!tableBody) return;
+    
     tableBody.innerHTML = data.length === 0 
       ? '<tr><td colspan="7" class="text-center">No se encontraron registros</td></tr>'
       : data.map(producto => {
@@ -232,15 +283,17 @@ async function generarReporteStock() {
     mostrarAlerta('Reporte de stock generado exitosamente', 'success');
   } catch (error) {
     console.error('Error generando reporte de stock:', error);
-    mostrarAlerta('Error al generar reporte de stock', 'error');
+    mostrarAlerta(`Error al generar reporte de stock: ${error.message}`, 'error');
   }
 }
 
 // Genera el reporte de proveedores
 async function generarReporteProveedores() {
   try {
-    const startDate = document.getElementById('proveedoresStartDate').value;
-    const endDate = document.getElementById('proveedoresEndDate').value;
+    await verificarColumnas('proveedores', ['nombre', 'contacto', 'telefono', 'email', 'direccion', 'productos_ofrecidos', 'fecha_registro']);
+    
+    const startDate = document.getElementById('proveedoresStartDate')?.value;
+    const endDate = document.getElementById('proveedoresEndDate')?.value;
     
     let query = supabase
       .from('proveedores')
@@ -255,6 +308,8 @@ async function generarReporteProveedores() {
     if (error) throw error;
     
     const tableBody = document.getElementById('proveedoresTableBody');
+    if (!tableBody) return;
+    
     tableBody.innerHTML = data.length === 0 
       ? '<tr><td colspan="7" class="text-center">No se encontraron registros</td></tr>'
       : data.map(proveedor => `
@@ -272,35 +327,42 @@ async function generarReporteProveedores() {
     mostrarAlerta('Reporte de proveedores generado exitosamente', 'success');
   } catch (error) {
     console.error('Error generando reporte de proveedores:', error);
-    mostrarAlerta('Error al generar reporte de proveedores', 'error');
+    mostrarAlerta(`Error al generar reporte de proveedores: ${error.message}`, 'error');
   }
 }
 
 // Exporta a Excel
-function exportToExcel(tableId, fileName) {
+async function exportToExcel(tableId, fileName) {
   try {
     const table = document.getElementById(tableId);
+    if (!table) {
+      throw new Error('No se encontró la tabla para exportar');
+    }
+    
     const wb = XLSX.utils.table_to_book(table);
     XLSX.writeFile(wb, `${fileName}_${new Date().toISOString().slice(0,10)}.xlsx`);
     mostrarAlerta('Archivo Excel generado correctamente', 'success');
   } catch (error) {
     console.error('Error exportando a Excel:', error);
-    mostrarAlerta('Error al exportar a Excel', 'error');
+    mostrarAlerta(`Error al exportar a Excel: ${error.message}`, 'error');
   }
 }
 
 // Exporta a PDF
-function exportToPDF(tableId, fileName) {
+async function exportToPDF(tableId, fileName) {
   try {
-    const { jsPDF } = window.jspdf;
-    const { autoTable } = window.jspdf.autoTable;
-    const doc = new jsPDF();
-    autoTable(doc, { html: `#${tableId}` });
+    const table = document.getElementById(tableId);
+    if (!table) {
+      throw new Error('No se encontró la tabla para exportar');
+    }
+    
+    const doc = new jsPDF.jsPDF();
+    doc.autoTable({ html: `#${tableId}` });
     doc.save(`${fileName}_${new Date().toISOString().slice(0,10)}.pdf`);
     mostrarAlerta('Archivo PDF generado correctamente', 'success');
   } catch (error) {
     console.error('Error exportando a PDF:', error);
-    mostrarAlerta('Error al exportar a PDF', 'error');
+    mostrarAlerta(`Error al exportar a PDF: ${error.message}`, 'error');
   }
 }
 
