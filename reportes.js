@@ -1,9 +1,9 @@
-// js/reportes.js - Versión corregida y completa
+// js/reportes.js - Versión corregida con imports funcionando
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Swal from 'sweetalert2'
 import * as XLSX from 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm'
-import { jsPDF } from 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
-import 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js'
+import { jsPDF } from 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm'
+import autoTable from 'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/+esm'
 
 // Configuración de Supabase
 const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co'
@@ -348,7 +348,7 @@ async function exportToExcel(tableId, fileName) {
   }
 }
 
-// Exporta a PDF
+// Exporta a PDF - Versión corregida
 async function exportToPDF(tableId, fileName) {
   try {
     const table = document.getElementById(tableId);
@@ -356,8 +356,8 @@ async function exportToPDF(tableId, fileName) {
       throw new Error('No se encontró la tabla para exportar');
     }
     
-    const doc = new jsPDF.jsPDF();
-    doc.autoTable({ html: `#${tableId}` });
+    const doc = new jsPDF();
+    autoTable(doc, { html: `#${tableId}` });
     doc.save(`${fileName}_${new Date().toISOString().slice(0,10)}.pdf`);
     mostrarAlerta('Archivo PDF generado correctamente', 'success');
   } catch (error) {
@@ -365,6 +365,7 @@ async function exportToPDF(tableId, fileName) {
     mostrarAlerta(`Error al exportar a PDF: ${error.message}`, 'error');
   }
 }
+
 
 // Formatea fechas para visualización
 function formatearFecha(fechaIso) {
