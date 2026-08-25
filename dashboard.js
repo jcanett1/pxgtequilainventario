@@ -5,6 +5,17 @@ import { escapeHtml, formatCurrency, formatDate, localDateInputValue, setTableSt
 
 Chart.register(...registerables)
 
+const chartColors = {
+  navy: '#19324d',
+  slate: '#4f6575',
+  gold: '#d6a74b',
+  goldDark: '#9b6f2f',
+  success: '#2f855a',
+  danger: '#b85c5c',
+  info: '#2d8aa6',
+  grid: 'rgba(79, 101, 117, 0.14)'
+}
+
 let stockCategoryChart
 let recentMovementsChart
 
@@ -82,7 +93,7 @@ async function loadStockByCategory() {
       labels: Object.keys(categorySums).length ? Object.keys(categorySums) : ['Sin datos'],
       datasets: [{
         data: Object.keys(categorySums).length ? Object.values(categorySums) : [1],
-        backgroundColor: ['#8b0000', '#ffb347', '#996633', '#32a852', '#36a2eb', '#9966ff'],
+        backgroundColor: [chartColors.navy, chartColors.gold, chartColors.slate, chartColors.success, chartColors.info, chartColors.goldDark],
         borderWidth: 0,
         hoverOffset: 6
       }]
@@ -92,7 +103,7 @@ async function loadStockByCategory() {
       maintainAspectRatio: false,
       cutout: '64%',
       plugins: {
-        legend: { position: 'right' },
+        legend: { position: 'right', labels: { color: chartColors.slate, usePointStyle: true, padding: 16 } },
         title: { display: false }
       }
     }
@@ -140,16 +151,16 @@ async function loadRecentMovements() {
         {
           label: 'Entradas',
           data: labels.map(item => dateMap[item.key].entrada),
-          borderColor: '#32a852',
-          backgroundColor: 'rgba(50, 168, 82, 0.12)',
+          borderColor: chartColors.success,
+          backgroundColor: 'rgba(47, 133, 90, 0.12)',
           tension: 0.35,
           fill: true
         },
         {
           label: 'Salidas',
           data: labels.map(item => dateMap[item.key].salida),
-          borderColor: '#8b0000',
-          backgroundColor: 'rgba(139, 0, 0, 0.1)',
+          borderColor: chartColors.danger,
+          backgroundColor: 'rgba(184, 92, 92, 0.10)',
           tension: 0.35,
           fill: true
         }
@@ -159,8 +170,11 @@ async function loadRecentMovements() {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { position: 'bottom' } },
-      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+      plugins: { legend: { position: 'bottom', labels: { color: chartColors.slate, usePointStyle: true, padding: 16 } } },
+      scales: {
+        x: { ticks: { color: chartColors.slate }, grid: { color: chartColors.grid } },
+        y: { beginAtZero: true, ticks: { precision: 0, color: chartColors.slate }, grid: { color: chartColors.grid } }
+      }
     }
   })
 }

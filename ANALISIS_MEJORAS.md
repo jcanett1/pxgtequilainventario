@@ -122,3 +122,16 @@ La corrección se validó en local: la consulta a `proveedores` devolvió 1 regi
 ## Verificación pública de la corrección de proveedores
 
 El build asociado al commit `a64015e` terminó correctamente. En la página pública, después de completar la carga asíncrona, aparece el proveedor registrado con ID 3, nombre `julio`, contacto, teléfono, correo, dirección, fecha y acciones de editar/eliminar. La declaración duplicada de `escapeHtml` ya no existe y el módulo carga sin el error reportado.
+
+
+## Renovación visual de la interfaz
+
+Para profesionalizar la apariencia se definió una paleta tipo tequila premium corporativo: azul pizarra profundo para navegación y estructura, marfil claro para el fondo, superficies blancas, dorado sobrio para acentos y estados semánticos contenidos para stock y movimientos. Se creó `theme.css` y se enlazó al final de los estilos internos de las seis pantallas para que sus reglas tengan prioridad sin modificar la lógica de Supabase.
+
+La revisión local confirmó el dashboard con navegación azul, tarjetas claras con acento dorado, fondo marfil, tipografía oscura y gráficos que ahora usan azul pizarra, dorado, verde sobrio y rojo suave. Productos conserva la tabla y sus acciones, pero con el mismo contraste y jerarquía visual.
+
+
+La revisión visual adicional confirmó que Movimientos conserva formularios, pestañas y botones legibles con navegación azul pizarra y acentos dorados. Proveedores mantiene la fila registrada, acciones visibles y footer en azul profundo, con el mismo tratamiento de contraste y estados.
+
+
+La verificación de Reportes confirmó filtros y botones con buena jerarquía en azul pizarra, dorado y estados semánticos. Stock mostró correctamente el registro `sabritas` y el nivel crítico con un fondo rojo suave, manteniendo legibilidad sin volver al rojo dominante anterior.
