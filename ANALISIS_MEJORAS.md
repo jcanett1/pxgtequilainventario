@@ -168,3 +168,8 @@ La validación local confirmó que el dashboard sin sesión redirige al login y 
 
 
 La prueba local del hash `#type=recovery` mostró correctamente el formulario de nueva contraseña con confirmación, mensajes informativos y botones para actualizar o volver al login. La consola del modo recuperación no mostró errores de JavaScript.
+
+
+## Verificación pública del login
+
+El build de GitHub Pages asociado al commit `798429e` terminó correctamente. La pantalla pública `login.html` carga con su diseño profesional, el logo PXG, los campos de correo y contraseña, recuperación y validación. Una visita directa al dashboard sin sesión redirige públicamente a `login.html` y conserva la página solicitada en el parámetro `redirect`.
