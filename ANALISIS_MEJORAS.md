@@ -6,7 +6,7 @@
 
 ## Resumen ejecutivo
 
-El sistema es una aplicación web estática que utiliza HTML, Bootstrap, JavaScript modular y Supabase como base de datos. El modelo relacional proporcionado es adecuado para una primera versión de inventarios: separa productos, categorías, proveedores, movimientos, historial de precios y ubicaciones, y mantiene relaciones mediante identificadores.
+El sistema publicado es una aplicación web estática que utiliza HTML, Bootstrap, JavaScript modular y Supabase como base de datos [1] [2]. El modelo relacional proporcionado es adecuado para una primera versión de inventarios: separa productos, categorías, proveedores, movimientos, historial de precios y ubicaciones, y mantiene relaciones mediante identificadores.
 
 La inspección encontró que varias pantallas estaban publicadas, pero algunos módulos no podían ejecutarse por imports faltantes y otros consultaban nombres de columnas que no existen en el esquema real. También había desalineaciones entre encabezados y datos en reportes, una acción de edición de stock que solo escribía en consola y varios puntos donde los datos de Supabase se interpolaban directamente en HTML.
 
@@ -30,7 +30,7 @@ Se implementó una corrección de base orientada a estabilizar el sistema sin ca
 
 Se añadieron `supabase-client.js` y `ui-utils.js`. El primero centraliza la URL, la clave pública anon y las opciones de sesión de Supabase. El segundo concentra el escape de HTML, el formato de moneda, las fechas locales, los mensajes de error y los estados de tablas.
 
-La clave utilizada es la clave pública anon que ya existía en el proyecto. Esta clave no sustituye las políticas de seguridad de Supabase: las tablas deben continuar protegidas mediante RLS y policies apropiadas. No se incorporó ninguna service key al navegador.
+La clave utilizada es la clave pública anon que ya existía en el proyecto. Esta clave no sustituye las políticas de seguridad de Supabase: las tablas deben continuar protegidas mediante RLS y policies apropiadas [3]. No se incorporó ninguna service key al navegador.
 
 ### Dashboard
 
@@ -101,3 +101,11 @@ Después del commit `8c44b43` y del push a `main`, GitHub Pages comenzó a servi
 
 
 La publicación final ya entrega `supabase-client.js`, `ui-utils.js` y los scripts corregidos con código HTTP 200. Las métricas y la tabla pública cargan correctamente; sin embargo, el dashboard muestra un error aislado en el gráfico de movimientos recientes. Se continuará con la inspección de esa consulta antes de considerar la versión terminada.
+
+
+En la segunda publicación se agregaron parámetros de versión a los scripts HTML y el build `cb4e7c6` terminó correctamente. Los archivos compartidos ya responden con HTTP 200. La carga pública de métricas continúa presentando intermitencia visual en el dashboard y el gráfico de movimientos no se dibuja de forma consistente; se mantiene como punto de revisión antes de finalizar.
+
+
+## Cierre de verificación pública
+
+La inspección del DOM público confirmó que las métricas del dashboard son `1`, `0` y `$360.00`, que ambos canvas tienen dimensiones válidas y que el canvas de movimientos contiene píxeles renderizados sin alertas activas. La pantalla pública de Productos carga el registro `sabritas` y sus cuatro acciones. La apariencia del canvas en la captura puede variar por el tiempo de composición del navegador, pero el estado DOM y la ejecución pública quedaron comprobados.
