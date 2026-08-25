@@ -117,3 +117,8 @@ Se detectó que `proveedores.js` importaba `escapeHtml` desde `ui-utils.js` y ad
 
 
 La corrección se validó en local: la consulta a `proveedores` devolvió 1 registro (`julio`, ID 3) y el DOM terminó mostrando la fila con contacto, teléfono, correo, dirección y fecha. La captura inicial vacía correspondía al momento previo a completar la carga asíncrona; después de actualizar la vista, el proveedor aparece correctamente.
+
+
+## Verificación pública de la corrección de proveedores
+
+El build asociado al commit `a64015e` terminó correctamente. En la página pública, después de completar la carga asíncrona, aparece el proveedor registrado con ID 3, nombre `julio`, contacto, teléfono, correo, dirección, fecha y acciones de editar/eliminar. La declaración duplicada de `escapeHtml` ya no existe y el módulo carga sin el error reportado.
