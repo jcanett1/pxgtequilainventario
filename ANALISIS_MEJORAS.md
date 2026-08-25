@@ -140,3 +140,10 @@ La verificación de Reportes confirmó filtros y botones con buena jerarquía en
 ## Verificación pública del rediseño visual
 
 El build asociado al commit `a6d1de8` terminó correctamente en GitHub Pages. La versión pública muestra navegación azul pizarra, fondo marfil, tarjetas blancas con acento dorado, footer azul profundo y gráficos actualizados. Las métricas y el producto reciente siguen cargando con los mismos datos, confirmando que la renovación cromática no alteró la lógica del inventario.
+
+
+## Integración del logotipo PXG
+
+Se integró el emblema PXG proporcionado como `pxg-logo-transparent-wide.png`, un PNG con canal alfa real y fondo blanco eliminado. El recurso se utiliza en la navegación de las seis páginas y en los fondos de bienvenida que anteriormente apuntaban al logo remoto. El estilo compartido conserva la proporción del emblema con `object-fit: contain` y aplica un tratamiento blanco visual para mantener contraste sobre la barra azul, sin crear un cuadro de fondo.
+
+La validación local confirmó que el logotipo se muestra limpio y contrastado en el dashboard, mientras que la carga de datos y los gráficos permanecen funcionales.
