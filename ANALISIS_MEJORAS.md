@@ -193,3 +193,6 @@ La administración utiliza `app_metadata.role` con los valores `admin` y `usuari
 La validación estática confirmó sintaxis correcta en `auth-guard.js` y `usuarios.js`, menú de perfil en las siete páginas, tema versionado en las seis pantallas existentes, ruta admin protegida y ausencia de secretos privilegiados embebidos. La página `usuarios.html` redirige al login cuando no existe sesión.
 
 La Edge Function y su secreto de servidor todavía requieren despliegue en el proyecto Supabase siguiendo `SUPABASE_AUTH_SETUP.md`; GitHub Pages no puede guardar una service role key de manera segura.
+
+
+El build público del commit `580e694` terminó correctamente. La visita a `usuarios.html` sin sesión redirige a `login.html` conservando el destino solicitado, por lo que la nueva ruta no expone la tabla de usuarios a visitantes no autenticados.
