@@ -1,10 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
-import Swal from 'sweetalert2'
-
-// Configuración de Supabase
-const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3a3Zmd3JybGl6aHFkcGF4Zm1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NTIyODMsImV4cCI6MjA2NTMyODI4M30.6ryUGUVRcDtASw0s1RTnKwSA4ezn_I_oxHeuSWGmwFU'
-const supabase = createClient(supabaseUrl, supabaseKey)
+import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11/+esm'
+import { supabase } from './supabase-client.js'
+import { escapeHtml, friendlyError } from './ui-utils.js'
 
 // Variables globales
 let proveedorEditando = null
@@ -25,6 +21,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Configurar event listeners
     document.getElementById('saveProviderBtn').addEventListener('click', guardarProveedor)
+    document.getElementById('providersTableBody')?.addEventListener('click', manejarAccionProveedor)
+    document.getElementById('newProviderBtn')?.addEventListener('click', nuevoProveedor)
     
     // Inicializar tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -32,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   } catch (error) {
     console.error('Error inicial:', error)
-    mostrarError('Error al cargar la página. Por favor recargue.')
+    mostrarError('Error al cargar la página: ' + friendlyError(error))
   }
 })
 
@@ -62,34 +60,39 @@ async function cargarProveedores() {
       return
     }
 
-    proveedores.forEach(proveedor => {
-      const tr = document.createElement('tr')
-      tr.innerHTML = `
-        <td>${proveedor.id}</td>
-        <td>${proveedor.nombre}</td>
-        <td>${proveedor.contacto || 'N/A'}</td>
-        <td>${proveedor.telefono || 'N/A'}</td>
-        <td>${proveedor.email || 'N/A'}</td>
-        <td>${proveedor.direccion || 'N/A'}</td>
+    tbody.innerHTML = proveedores.map(proveedor => `
+      <tr>
+        <td>${escapeHtml(proveedor.id)}</td>
+        <td><strong>${escapeHtml(proveedor.nombre)}</strong></td>
+        <td>${escapeHtml(proveedor.contacto || 'N/A')}</td>
+        <td>${escapeHtml(proveedor.telefono || 'N/A')}</td>
+        <td>${escapeHtml(proveedor.email || 'N/A')}</td>
+        <td>${escapeHtml(proveedor.direccion || 'N/A')}</td>
         <td>${formatearFecha(proveedor.created_at)}</td>
         <td class="text-nowrap">
-          <button class="btn btn-sm btn-primary me-1" 
-            onclick="editarProveedor(${proveedor.id})">
-            <i class="fas fa-edit"></i>
+          <button class="btn btn-sm btn-primary me-1" data-provider-action="edit" data-provider-id="${escapeHtml(proveedor.id)}" title="Editar">
+            <i class="fas fa-edit" aria-hidden="true"></i><span class="visually-hidden">Editar</span>
           </button>
-          <button class="btn btn-sm btn-danger" 
-            onclick="eliminarProveedor(${proveedor.id}, '${escapeHtml(proveedor.nombre)}')">
-            <i class="fas fa-trash"></i>
+          <button class="btn btn-sm btn-danger" data-provider-action="delete" data-provider-id="${escapeHtml(proveedor.id)}" data-provider-name="${escapeHtml(proveedor.nombre)}" title="Eliminar">
+            <i class="fas fa-trash" aria-hidden="true"></i><span class="visually-hidden">Eliminar</span>
           </button>
         </td>
-      `
-      tbody.appendChild(tr)
-    })
+      </tr>
+    `).join('')
 
   } catch (error) {
     console.error('Error cargando proveedores:', error)
-    mostrarError('No se pudieron cargar los proveedores. Por favor recargue la página.')
+    mostrarError('No se pudieron cargar los proveedores: ' + friendlyError(error))
   }
+}
+
+function manejarAccionProveedor(event) {
+  const button = event.target.closest('[data-provider-action]')
+  if (!button) return
+  const id = Number(button.dataset.providerId)
+  if (!Number.isInteger(id)) return
+  if (button.dataset.providerAction === 'edit') window.editarProveedor(id)
+  if (button.dataset.providerAction === 'delete') window.eliminarProveedor(id, button.dataset.providerName || 'este proveedor')
 }
 
 // Guardar proveedor (nuevo o edición)
@@ -143,7 +146,7 @@ async function guardarProveedor() {
       result = data[0]
     }
 
-    loading.close()
+    Swal.close()
     
     mostrarExito(`Proveedor "${result.nombre}" ${proveedorEditando ? 'actualizado' : 'guardado'} correctamente`)
     
@@ -294,7 +297,7 @@ window.eliminarProveedor = async function(id, nombre) {
       .delete()
       .eq('id', id)
 
-    loading.close()
+    Swal.close()
 
     if (error) throw error
 

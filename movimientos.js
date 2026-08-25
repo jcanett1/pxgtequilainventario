@@ -1,245 +1,219 @@
-import { createClient } from '@supabase/supabase-js'
-import Swal from 'sweetalert2'
+import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11/+esm'
+import { getCurrentUser, supabase } from './supabase-client.js'
+import { escapeHtml, formatDate, friendlyError, localDateInputValue, setTableState, showToast } from './ui-utils.js'
 
-// Configuración de Supabase
-const supabaseUrl = 'https://bwkvfwrrlizhqdpaxfmb.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3a3Zmd3JybGl6aHFkcGF4Zm1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NTIyODMsImV4cCI6MjA2NTMyODI4M30.6ryUGUVRcDtASw0s1RTnKwSA4ezn_I_oxHeuSWGmwFU'
-const supabase = createClient(supabaseUrl, supabaseKey)
+window.addEventListener('DOMContentLoaded', initializeMovements)
 
-// Función para mostrar alertas
-function mostrarAlerta(mensaje, tipo = 'error') {
-  Swal.fire({
-    title: mensaje,
-    icon: tipo,
-    toast: true,
-    position: 'top-end',
-    showConfirmButton: false,
-    timer: 3000,
-    timerProgressBar: true
+async function initializeMovements() {
+  try {
+    await Promise.all([cargarProductos(), cargarMovimientos()])
+    document.getElementById('salidaFecha').value = localDateInputValue()
+    document.getElementById('registrarSalidaBtn')?.addEventListener('click', registrarSalida)
+    document.getElementById('saveMovementBtn')?.addEventListener('click', guardarMovimiento)
+    document.getElementById('updateMovementBtn')?.addEventListener('click', actualizarMovimiento)
+    document.getElementById('confirmarDevolucionBtn')?.addEventListener('click', confirmarDevolucion)
+    document.getElementById('movementsTableBody')?.addEventListener('click', manejarAccionMovimiento)
+  } catch (error) {
+    console.error('Error inicial:', error)
+    showToast(Swal, 'No se pudo cargar el módulo de movimientos: ' + friendlyError(error), 'error')
+  }
+}
+
+async function cargarProductos() {
+  const { data: productos, error } = await supabase
+    .from('productos')
+    .select('id, nombre, cantidad')
+    .order('nombre')
+  if (error) throw error
+
+  const selects = ['salidaProducto', 'movementProduct', 'editMovementProduct']
+  selects.forEach(id => {
+    const select = document.getElementById(id)
+    if (!select) return
+    select.innerHTML = '<option value="">Seleccionar producto</option>'
+    ;(productos || []).forEach(producto => {
+      const option = new Option(`${producto.nombre} (${Number(producto.cantidad) || 0} disponibles)`, producto.id)
+      select.add(option)
+    })
   })
 }
 
-// Inicialización cuando el DOM está listo
-document.addEventListener('DOMContentLoaded', async function() {
-  try {
-    await cargarProductos()
-    await cargarMovimientos()
-    
-    // Configurar fecha por defecto
-    document.getElementById('salidaFecha').valueAsDate = new Date()
-    
-    // Event listeners
-    document.getElementById('registrarSalidaBtn').addEventListener('click', registrarSalida)
-    
-  } catch (error) {
-    console.error('Error inicial:', error)
-    mostrarAlerta('Error al cargar la página', 'error')
-  }
-})
+async function cargarMovimientos() {
+  const { data: movimientos, error } = await supabase
+    .from('movimientos')
+    .select('id, tipo, cantidad, motivo, destinatario, created_at, producto_id, usuario_id, productos:producto_id(id, nombre)')
+    .order('created_at', { ascending: false })
+  if (error) throw error
 
-// Función para capitalizar texto
-function capitalizar(texto) {
+  const tableBody = document.getElementById('movementsTableBody')
+  if (!tableBody) return
+  if (!movimientos?.length) {
+    setTableState(tableBody, 8, 'No hay movimientos registrados.')
+    return
+  }
+
+  tableBody.innerHTML = movimientos.map(movimiento => `
+    <tr>
+      <td>${escapeHtml(movimiento.id)}</td>
+      <td>${escapeHtml(movimiento.productos?.nombre || 'Producto eliminado')}</td>
+      <td><span class="badge ${getBadgeClass(movimiento.tipo)}">${escapeHtml(capitalizar(movimiento.tipo))}</span></td>
+      <td>${Number(movimiento.cantidad) || 0}</td>
+      <td>${escapeHtml(movimiento.motivo || '-')}</td>
+      <td>${escapeHtml(movimiento.destinatario || '-')}</td>
+      <td>${escapeHtml(movimiento.usuario_id ? `${movimiento.usuario_id.slice(0, 8)}…` : 'Sistema')}</td>
+      <td>${formatDate(movimiento.created_at, true)}</td>
+    </tr>
+  `).join('')
+}
+
+function capitalizar(texto = '') {
   return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
 
-// Función para formatear fechas
-function formatearFecha(fechaIso) {
-  if (!fechaIso) return '-'
-  const fecha = new Date(fechaIso)
-  return fecha.toLocaleDateString('es-MX', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+function getBadgeClass(tipo) {
+  if (tipo === 'entrada') return 'bg-success'
+  if (tipo === 'salida') return 'bg-danger'
+  if (tipo === 'ajuste') return 'bg-warning text-dark'
+  return 'bg-secondary'
+}
+
+async function registrarSalida() {
+  const form = document.getElementById('salidaForm')
+  if (!form.checkValidity()) {
+    form.classList.add('was-validated')
+    return
+  }
+
+  const productoId = document.getElementById('salidaProducto').value
+  const cantidad = Number.parseInt(document.getElementById('salidaCantidad').value, 10)
+  const destinatario = document.getElementById('salidaDestinatario').value.trim()
+  const motivo = document.getElementById('salidaMotivo').value.trim()
+  const fecha = document.getElementById('salidaFecha').value
+
+  if (!productoId || !Number.isInteger(cantidad) || cantidad <= 0) return showToast(Swal, 'La cantidad debe ser un entero mayor que cero.', 'error')
+  if (!destinatario) return showToast(Swal, 'El destinatario es requerido.', 'error')
+
+  await registrarMovimientoConStock({
+    productoId,
+    tipo: 'salida',
+    cantidad,
+    motivo,
+    destinatario,
+    createdAt: fecha ? `${fecha}T12:00:00` : undefined,
+    onSuccess: async () => {
+      showToast(Swal, 'Salida registrada correctamente.', 'success')
+      form.reset()
+      form.classList.remove('was-validated')
+      document.getElementById('salidaFecha').value = localDateInputValue()
+      await Promise.all([cargarProductos(), cargarMovimientos()])
+    }
   })
 }
 
-// Función para obtener clase CSS según tipo de movimiento
-function getBadgeClass(tipo) {
-  switch(tipo) {
-    case 'entrada': return 'bg-success'
-    case 'salida': return 'bg-danger'
-    case 'ajuste': return 'bg-warning'
-    default: return 'bg-secondary'
+async function guardarMovimiento() {
+  const form = document.getElementById('movementForm')
+  if (!form.checkValidity()) {
+    form.classList.add('was-validated')
+    return
   }
+
+  const productoId = document.getElementById('movementProduct').value
+  const tipo = document.getElementById('movementType').value
+  const cantidad = Number.parseInt(document.getElementById('movementQuantity').value, 10)
+  const motivo = document.getElementById('movementReason').value.trim()
+
+  if (!productoId || !['entrada', 'salida', 'ajuste'].includes(tipo) || !Number.isInteger(cantidad) || cantidad <= 0) {
+    return showToast(Swal, 'Completa correctamente el producto, tipo y cantidad.', 'error')
+  }
+
+  await registrarMovimientoConStock({
+    productoId,
+    tipo,
+    cantidad,
+    motivo,
+    onSuccess: async () => {
+      showToast(Swal, 'Movimiento registrado correctamente.', 'success')
+      bootstrap.Modal.getInstance(document.getElementById('addMovementModal'))?.hide()
+      form.reset()
+      form.classList.remove('was-validated')
+      await Promise.all([cargarProductos(), cargarMovimientos()])
+    }
+  })
 }
 
-// Cargar productos para selects
-async function cargarProductos() {
+async function registrarMovimientoConStock({ productoId, tipo, cantidad, motivo, destinatario = null, createdAt, onSuccess }) {
+  Swal.fire({ title: 'Guardando movimiento...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
+  let producto
+  let updatedQuantity
   try {
-    const { data: productos, error } = await supabase
+    const { data, error: productError } = await supabase.from('productos').select('id, nombre, cantidad').eq('id', productoId).single()
+    if (productError) throw productError
+    producto = data
+
+    const currentQuantity = Number(producto.cantidad) || 0
+    const delta = tipo === 'salida' ? -cantidad : cantidad
+    updatedQuantity = currentQuantity + delta
+    if (updatedQuantity < 0) throw new Error(`Stock insuficiente. Disponible: ${currentQuantity}`)
+
+    const { data: updated, error: updateError } = await supabase
       .from('productos')
-      .select('id, nombre')
-      .order('nombre', { ascending: true })
-    
-    if (error) throw error
-    
-    const selectProducto = document.getElementById('salidaProducto')
-    selectProducto.innerHTML = '<option value="">Seleccionar producto</option>'
-    
-    productos.forEach(producto => {
-      const option = new Option(producto.nombre, producto.id)
-      selectProducto.add(option)
-    })
-    
-  } catch (error) {
-    console.error('Error cargando productos:', error)
-    mostrarAlerta('Error al cargar productos', 'error')
-  }
-}
-
-// Cargar movimientos en la tabla
-async function cargarMovimientos() {
-  try {
-    // Consulta modificada para manejar correctamente las relaciones
-    const query = supabase
-      .from('movimientos')
-      .select(`
-        id,
-        tipo,
-        cantidad,
-        motivo,
-        destinatario,
-        created_at,
-        producto_id,
-        productos (id, nombre),
-        usuario_id
-      `)
-      .order('created_at', { ascending: false });
-
-    // Solo intentar unir con auth.users si el usuario está autenticado
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      query.select(`, usuarios: usuario_id (email)`);
-    }
-
-    const { data: movimientos, error } = await query;
-
-    if (error) throw error;
-    
-    const tableBody = document.getElementById('movementsTableBody');
-    tableBody.innerHTML = '';
-    
-    if (movimientos.length === 0) {
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="8" class="text-center py-4 text-muted">
-            No hay movimientos registrados
-          </td>
-        </tr>
-      `;
-      return;
-    }
-    
-    movimientos.forEach(movimiento => {
-      const row = document.createElement('tr');
-      
-      // Manejar el email del usuario de manera segura
-      let usuarioEmail = 'Sistema';
-      if (movimiento.usuarios && movimiento.usuarios.email) {
-        usuarioEmail = movimiento.usuarios.email;
-      } else if (movimiento.usuario_id) {
-        usuarioEmail = 'Usuario (' + movimiento.usuario_id.substring(0, 8) + '...)';
-      }
-      
-      row.innerHTML = `
-        <td>${movimiento.id}</td>
-        <td>${movimiento.productos?.nombre || 'Producto eliminado'}</td>
-        <td><span class="badge ${getBadgeClass(movimiento.tipo)}">${capitalizar(movimiento.tipo)}</span></td>
-        <td>${movimiento.cantidad}</td>
-        <td>${movimiento.motivo || ''}</td>
-        <td>${movimiento.destinatario || '-'}</td>
-        <td>${usuarioEmail}</td>
-        <td>${formatearFecha(movimiento.created_at)}</td>
-      `;
-      
-      tableBody.appendChild(row);
-    });
-    
-  } catch (error) {
-    console.error('Error cargando movimientos:', error);
-    mostrarAlerta('Error al cargar movimientos. ' + (error.message || ''), 'error');
-  }
-}
-
-// Función principal para registrar salidas
-async function registrarSalida() {
-  const form = document.getElementById('salidaForm');
-  
-  try {
-    if (!form.checkValidity()) {
-      form.classList.add('was-validated');
-      return;
-    }
-    
-    const productoId = document.getElementById('salidaProducto').value;
-    const cantidad = parseInt(document.getElementById('salidaCantidad').value);
-    const destinatario = document.getElementById('salidaDestinatario').value.trim();
-    const motivo = document.getElementById('salidaMotivo').value.trim();
-    const fecha = document.getElementById('salidaFecha').value;
-
-    // Validaciones
-    if (cantidad <= 0) throw new Error('La cantidad debe ser mayor que cero');
-    if (!destinatario) throw new Error('El destinatario es requerido');
-
-    const loading = Swal.fire({
-      title: 'Registrando salida...',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading()
-    });
-
-    // Verificar stock
-    const { data: producto, error: stockError } = await supabase
-      .from('productos')
-      .select('cantidad')
+      .update({ cantidad: updatedQuantity })
       .eq('id', productoId)
-      .single();
-    
-    if (stockError) throw stockError;
-    if (producto.cantidad < cantidad) {
-      throw new Error(`Stock insuficiente. Disponible: ${producto.cantidad}`);
+      .eq('cantidad', currentQuantity)
+      .select('id, cantidad')
+      .single()
+    if (updateError || !updated) throw updateError || new Error('El stock cambió mientras se guardaba. Intenta nuevamente.')
+
+    const user = await getCurrentUser().catch(() => null)
+    const { error: movementError } = await supabase.from('movimientos').insert({
+      producto_id: productoId,
+      tipo,
+      cantidad,
+      motivo: motivo || null,
+      destinatario,
+      usuario_id: user?.id || null,
+      ...(createdAt ? { created_at: createdAt } : {})
+    })
+    if (movementError) {
+      await supabase.from('productos').update({ cantidad: currentQuantity }).eq('id', productoId).eq('cantidad', updatedQuantity)
+      throw movementError
     }
 
-    // Obtener usuario actual (maneja tanto autenticado como anónimo)
-    const { data: { user } } = await supabase.auth.getUser();
-    const movimientoData = {
-      producto_id: productoId,
-      tipo: 'salida',
-      cantidad: cantidad,
-      motivo: motivo,
-      destinatario: destinatario,
-      created_at: fecha || new Date().toISOString(),
-      usuario_id: user?.id || null
-    };
-
-    // Insertar movimiento
-    const { error: movError } = await supabase
-      .from('movimientos')
-      .insert([movimientoData]);
-    
-    if (movError) throw movError;
-
-    // Actualizar stock
-    const { error: updateError } = await supabase
-      .from('productos')
-      .update({ cantidad: producto.cantidad - cantidad })
-      .eq('id', productoId);
-    
-    if (updateError) throw updateError;
-
-    loading.close();
-    mostrarAlerta('Salida registrada correctamente', 'success');
-    
-    form.reset();
-    form.classList.remove('was-validated');
-    document.getElementById('salidaFecha').valueAsDate = new Date();
-    
-    await cargarMovimientos();
-    document.dispatchEvent(new CustomEvent('stockUpdated'));
-    
+    Swal.close()
+    await onSuccess?.()
   } catch (error) {
-    console.error('Error registrando salida:', error);
-    mostrarAlerta(error.message || 'Error al registrar salida', 'error');
+    Swal.close()
+    console.error('Error registrando movimiento:', error)
+    showToast(Swal, friendlyError(error), 'error')
   }
 }
+
+async function actualizarMovimiento() {
+  const form = document.getElementById('editMovementForm')
+  if (!form.checkValidity()) {
+    form.classList.add('was-validated')
+    return
+  }
+  const movementId = document.getElementById('editMovementId').value
+  if (!movementId) return showToast(Swal, 'No se encontró el movimiento a editar.', 'error')
+  showToast(Swal, 'La edición de movimientos existentes requiere recalcular el stock y quedará habilitada en la siguiente versión.', 'info')
+}
+
+async function confirmarDevolucion() {
+  const movementId = document.getElementById('devolucionMovimientoId').value
+  const cantidad = Number.parseInt(document.getElementById('devolucionCantidad').value, 10)
+  const motivo = document.getElementById('devolucionMotivo').value.trim()
+  if (!movementId || !Number.isInteger(cantidad) || cantidad <= 0 || !motivo) {
+    return showToast(Swal, 'Completa la cantidad y el motivo de devolución.', 'error')
+  }
+  showToast(Swal, 'La devolución se debe vincular a un movimiento de salida para mantener la trazabilidad; esta acción quedará habilitada al completar ese flujo.', 'info')
+}
+
+function manejarAccionMovimiento(event) {
+  const actionButton = event.target.closest('[data-action]')
+  if (!actionButton) return
+  showToast(Swal, `Acción ${actionButton.dataset.action} disponible próximamente.`, 'info')
+}
+
+window.cargarMovimientos = cargarMovimientos
+window.registrarSalida = registrarSalida
