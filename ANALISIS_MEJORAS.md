@@ -147,3 +147,8 @@ El build asociado al commit `a6d1de8` terminó correctamente en GitHub Pages. La
 Se integró el emblema PXG proporcionado como `pxg-logo-transparent-wide.png`, un PNG con canal alfa real y fondo blanco eliminado. El recurso se utiliza en la navegación de las seis páginas y en los fondos de bienvenida que anteriormente apuntaban al logo remoto. El estilo compartido conserva la proporción del emblema con `object-fit: contain` y aplica un tratamiento blanco visual para mantener contraste sobre la barra azul, sin crear un cuadro de fondo.
 
 La validación local confirmó que el logotipo se muestra limpio y contrastado en el dashboard, mientras que la carga de datos y los gráficos permanecen funcionales.
+
+
+## Verificación pública del logotipo
+
+El build de GitHub Pages asociado al commit `212b4a6` terminó correctamente. La versión pública del dashboard muestra el emblema PXG en blanco sobre la navegación azul, sin rectángulo blanco y con proporción horizontal conservada. Las seis páginas apuntan al recurso local `pxg-logo-transparent-wide.png` y el archivo tiene color type RGBA con canal alfa real.
