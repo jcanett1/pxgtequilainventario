@@ -364,3 +364,128 @@ body.auth-ready {
     animation-duration: 0.01ms !important;
   }
 }
+
+
+.profile-dropdown {
+  position: relative;
+}
+
+.profile-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  padding: 0.32rem 0.65rem 0.32rem 0.4rem;
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+}
+
+.profile-trigger::after {
+  margin-left: 0.12rem;
+  vertical-align: middle;
+}
+
+.profile-trigger:hover,
+.profile-trigger:focus-visible,
+.profile-trigger.show {
+  color: #ffffff !important;
+  background: rgba(214, 167, 75, 0.18) !important;
+  border-color: rgba(214, 167, 75, 0.70) !important;
+}
+
+.profile-avatar {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: var(--pxg-navy);
+  background: var(--pxg-gold);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.profile-menu {
+  min-width: 250px;
+  padding: 0.5rem;
+  border: 1px solid var(--pxg-border);
+  border-top: 3px solid var(--pxg-gold);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(16, 37, 59, 0.20);
+}
+
+.profile-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  padding: 0.7rem 0.75rem;
+}
+
+.profile-summary strong {
+  color: var(--pxg-navy);
+  font-size: 0.95rem;
+}
+
+.profile-summary small {
+  max-width: 220px;
+  overflow: hidden;
+  color: var(--pxg-muted);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-role {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 0.22rem 0.55rem;
+  color: var(--pxg-navy);
+  background: #edf1f4;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.profile-role.is-admin {
+  color: #75511d;
+  background: rgba(214, 167, 75, 0.25);
+}
+
+.profile-menu .dropdown-item {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  border-radius: 8px;
+  color: var(--pxg-ink);
+  font-size: 0.88rem;
+}
+
+.profile-menu .dropdown-item:hover,
+.profile-menu .dropdown-item:focus-visible {
+  color: var(--pxg-navy);
+  background: rgba(214, 167, 75, 0.14);
+}
+
+.profile-menu .logout-menu-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+@media (max-width: 991.98px) {
+  .profile-dropdown {
+    width: 100%;
+  }
+
+  .profile-trigger {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .profile-menu {
+    width: 100%;
+  }
+}

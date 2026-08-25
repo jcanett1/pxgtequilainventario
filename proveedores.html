@@ -111,7 +111,7 @@
       }
     }
   </style>
-  <link rel="stylesheet" href="theme.css?v=20260825-auth">
+  <link rel="stylesheet" href="theme.css?v=20260825-profile">
 </head>
 <body class="auth-pending">
   <nav class="navbar navbar-expand-lg navbar-dark mb-4">
@@ -133,8 +133,24 @@
           <li class="nav-item"><a class="nav-link" href="reportes.html"><i class="fas fa-chart-bar"></i> Reportes</a></li>
         </ul>
         <div class="session-actions ms-lg-3">
-          <span id="currentUserEmail" class="user-email" title="Usuario actual"></span>
-          <button id="logoutBtn" type="button" class="btn btn-sm btn-outline-light logout-btn"><i class="fas fa-right-from-bracket me-1" aria-hidden="true"></i><span>Cerrar sesión</span></button>
+          <div class="dropdown profile-dropdown">
+            <button class="btn profile-trigger dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Abrir menú de perfil">
+              <span class="profile-avatar"><i class="fas fa-user" aria-hidden="true"></i></span>
+              <span id="profileTriggerName">Perfil</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end profile-menu">
+              <li>
+                <div class="profile-summary">
+                  <strong id="profileDisplayName">Usuario</strong>
+                  <small id="profileEmail">Sesión activa</small>
+                  <span id="profileRole" class="profile-role">Usuario</span>
+                </div>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a id="manageUsersLink" class="dropdown-item d-none" href="usuarios.html"><i class="fas fa-users-gear me-2" aria-hidden="true"></i>Administrar usuarios</a></li>
+              <li><button id="logoutBtn" type="button" class="dropdown-item logout-menu-item"><i class="fas fa-right-from-bracket me-2" aria-hidden="true"></i>Cerrar sesión</button></li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

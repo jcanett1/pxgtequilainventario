@@ -173,3 +173,23 @@ La prueba local del hash `#type=recovery` mostró correctamente el formulario de
 ## Verificación pública del login
 
 El build de GitHub Pages asociado al commit `798429e` terminó correctamente. La pantalla pública `login.html` carga con su diseño profesional, el logo PXG, los campos de correo y contraseña, recuperación y validación. Una visita directa al dashboard sin sesión redirige públicamente a `login.html` y conserva la página solicitada en el parámetro `redirect`.
+
+
+## Menú de perfil y administración de usuarios
+
+Se añadió un menú de perfil en la barra de navegación de Dashboard, Productos, Movimientos, Stock, Proveedores y Reportes. El menú muestra avatar, nombre, correo y rol; el enlace `Administrar usuarios` se presenta únicamente para el rol `admin`, y el cierre de sesión continúa disponible.
+
+Se creó `usuarios.html` y `usuarios.js` con búsqueda, tabla de cuentas, creación, edición y eliminación. La página exige `data-requires-admin="true"`; la prueba local sin sesión redirigió correctamente al login, conservando el destino solicitado.
+
+La administración de Auth se implementó en `supabase/functions/admin-users/index.ts`. La función valida el JWT del usuario, comprueba `app_metadata.role = admin` y usa la clave privilegiada solo en el entorno server-side de Supabase. Incluye controles para no eliminar al propio administrador ni dejar el proyecto sin administradores.
+
+
+## Perfiles y administración de usuarios
+
+Se sustituyó el correo directo de la barra por un menú de perfil con avatar, nombre, correo y rol. El enlace `Administrar usuarios` aparece solo para administradores. La nueva página `usuarios.html` incluye búsqueda, tabla de usuarios y formularios para crear, editar y eliminar cuentas mediante una Edge Function.
+
+La administración utiliza `app_metadata.role` con los valores `admin` y `usuario`. La Edge Function `supabase/functions/admin-users/index.ts` valida el JWT, comprueba el rol del solicitante y ejecuta las operaciones `auth.admin.*` únicamente server-side. Se incluyeron protecciones para no eliminar al propio administrador ni dejar el proyecto sin administradores.
+
+La validación estática confirmó sintaxis correcta en `auth-guard.js` y `usuarios.js`, menú de perfil en las siete páginas, tema versionado en las seis pantallas existentes, ruta admin protegida y ausencia de secretos privilegiados embebidos. La página `usuarios.html` redirige al login cuando no existe sesión.
+
+La Edge Function y su secreto de servidor todavía requieren despliegue en el proyecto Supabase siguiendo `SUPABASE_AUTH_SETUP.md`; GitHub Pages no puede guardar una service role key de manera segura.
