@@ -135,3 +135,8 @@ La revisión visual adicional confirmó que Movimientos conserva formularios, pe
 
 
 La verificación de Reportes confirmó filtros y botones con buena jerarquía en azul pizarra, dorado y estados semánticos. Stock mostró correctamente el registro `sabritas` y el nivel crítico con un fondo rojo suave, manteniendo legibilidad sin volver al rojo dominante anterior.
+
+
+## Verificación pública del rediseño visual
+
+El build asociado al commit `a6d1de8` terminó correctamente en GitHub Pages. La versión pública muestra navegación azul pizarra, fondo marfil, tarjetas blancas con acento dorado, footer azul profundo y gráficos actualizados. Las métricas y el producto reciente siguen cargando con los mismos datos, confirmando que la renovación cromática no alteró la lógica del inventario.
