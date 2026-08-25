@@ -109,3 +109,11 @@ En la segunda publicación se agregaron parámetros de versión a los scripts HT
 ## Cierre de verificación pública
 
 La inspección del DOM público confirmó que las métricas del dashboard son `1`, `0` y `$360.00`, que ambos canvas tienen dimensiones válidas y que el canvas de movimientos contiene píxeles renderizados sin alertas activas. La pantalla pública de Productos carga el registro `sabritas` y sus cuatro acciones. La apariencia del canvas en la captura puede variar por el tiempo de composición del navegador, pero el estado DOM y la ejecución pública quedaron comprobados.
+
+
+## Incidencia reportada y corrección en curso
+
+Se detectó que `proveedores.js` importaba `escapeHtml` desde `ui-utils.js` y además lo declaraba nuevamente en el mismo módulo, provocando `Uncaught SyntaxError: Identifier 'escapeHtml' has already been declared`. La declaración local fue eliminada y el script recibió una nueva versión de caché. La comprobación de sintaxis ya es correcta y la consola local no muestra errores, pero la tabla de proveedores continúa sin filas visibles; se está revisando la consulta y el renderizado de datos antes de publicar.
+
+
+La corrección se validó en local: la consulta a `proveedores` devolvió 1 registro (`julio`, ID 3) y el DOM terminó mostrando la fila con contacto, teléfono, correo, dirección y fecha. La captura inicial vacía correspondía al momento previo a completar la carga asíncrona; después de actualizar la vista, el proveedor aparece correctamente.

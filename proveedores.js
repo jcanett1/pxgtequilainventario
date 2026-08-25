@@ -185,15 +185,6 @@ function formatearFecha(fecha) {
   })
 }
 
-// Escapar HTML para seguridad
-function escapeHtml(str) {
-  return str.replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;")
-}
-
 // Mostrar loading
 function mostrarLoading(titulo) {
   return Swal.fire({
