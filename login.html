@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Acceso seguro al CRM Inventario PXG">
+  <title>Acceso | PXG Tequila Inventarios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="login.css?v=20260825-auth">
+</head>
+<body class="login-page">
+  <main class="login-shell">
+    <section class="login-visual" aria-labelledby="loginBrandTitle">
+      <div class="login-visual-content">
+        <div class="login-brand-lockup" id="loginBrandTitle">
+          <img src="pxg-logo-transparent-wide.png" alt="Logo PXG">
+          <span>PXG Tequila Inventarios</span>
+        </div>
+        <div class="login-eyebrow">Control inteligente</div>
+        <h1>Tu inventario, bajo control.</h1>
+        <p>Administra productos, movimientos, stock y proveedores desde un espacio seguro, claro y diseñado para trabajar mejor.</p>
+        <div class="login-trust" aria-label="Características del sistema">
+          <span><i class="fas fa-shield-halved me-1" aria-hidden="true"></i>Acceso seguro</span>
+          <span><i class="fas fa-chart-line me-1" aria-hidden="true"></i>Visión operativa</span>
+          <span><i class="fas fa-boxes-stacked me-1" aria-hidden="true"></i>Inventario centralizado</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="login-panel" aria-labelledby="loginTitle">
+      <div class="login-card">
+        <div class="login-mobile-brand">
+          <img src="pxg-logo-transparent-wide.png" alt="Logo PXG">
+          <span>PXG Tequila Inventarios</span>
+        </div>
+
+        <header class="login-card-header">
+          <div class="login-eyebrow">Área privada</div>
+          <h2 id="loginTitle">Bienvenido de nuevo</h2>
+          <p id="loginSubtitle">Ingresa tus credenciales para continuar al sistema.</p>
+        </header>
+
+        <div id="loginFeedback" class="login-feedback" role="status" aria-live="polite"></div>
+
+        <form id="loginForm" class="login-form" novalidate>
+          <div class="mb-3">
+            <label for="email" class="form-label">Correo electrónico</label>
+            <div class="input-group">
+              <span class="input-group-text" aria-hidden="true"><i class="fas fa-envelope"></i></span>
+              <input id="email" name="email" type="email" class="form-control" autocomplete="email" placeholder="nombre@empresa.com" required>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label for="password" class="form-label">Contraseña</label>
+            <div class="input-group">
+              <span class="input-group-text" aria-hidden="true"><i class="fas fa-lock"></i></span>
+              <input id="password" name="password" type="password" class="form-control" autocomplete="current-password" placeholder="Escribe tu contraseña" required minlength="6">
+              <button type="button" class="btn password-toggle" data-password-target="password" aria-label="Mostrar contraseña" aria-pressed="false">
+                <i class="fas fa-eye" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="login-help-row">
+            <button id="forgotPasswordBtn" type="button" class="login-link">¿Olvidaste tu contraseña?</button>
+          </div>
+
+          <button id="loginSubmit" type="submit" class="login-submit mt-4">
+            <span class="submit-label">Ingresar al CRM</span>
+            <span class="submit-loading is-hidden"><span class="spinner-border me-2" role="status" aria-hidden="true"></span>Validando acceso…</span>
+          </button>
+        </form>
+
+        <form id="resetForm" class="login-form is-hidden" novalidate>
+          <div class="mb-3">
+            <label for="newPassword" class="form-label">Nueva contraseña</label>
+            <div class="input-group">
+              <span class="input-group-text" aria-hidden="true"><i class="fas fa-key"></i></span>
+              <input id="newPassword" name="newPassword" type="password" class="form-control" autocomplete="new-password" placeholder="Mínimo 6 caracteres" required minlength="6">
+              <button type="button" class="btn password-toggle" data-password-target="newPassword" aria-label="Mostrar nueva contraseña" aria-pressed="false">
+                <i class="fas fa-eye" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="confirmPassword" class="form-label">Confirmar contraseña</label>
+            <div class="input-group">
+              <span class="input-group-text" aria-hidden="true"><i class="fas fa-check-double"></i></span>
+              <input id="confirmPassword" name="confirmPassword" type="password" class="form-control" autocomplete="new-password" placeholder="Repite la nueva contraseña" required minlength="6">
+              <button type="button" class="btn password-toggle" data-password-target="confirmPassword" aria-label="Mostrar confirmación" aria-pressed="false">
+                <i class="fas fa-eye" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <button id="resetSubmit" type="submit" class="login-submit mt-2">
+            <span class="submit-label">Actualizar contraseña</span>
+            <span class="submit-loading is-hidden"><span class="spinner-border me-2" role="status" aria-hidden="true"></span>Guardando…</span>
+          </button>
+          <button id="backToLoginBtn" type="button" class="login-link d-block mx-auto mt-3">Volver al inicio de sesión</button>
+        </form>
+
+        <div class="login-divider"><span>PXG Tequila</span></div>
+        <p class="login-footer-note"><i class="fas fa-lock me-1" aria-hidden="true"></i>Tu sesión se valida mediante Supabase Auth.</p>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="login.js?v=20260825-auth"></script>
+</body>
+</html>

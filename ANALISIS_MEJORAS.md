@@ -152,3 +152,19 @@ La validación local confirmó que el logotipo se muestra limpio y contrastado e
 ## Verificación pública del logotipo
 
 El build de GitHub Pages asociado al commit `212b4a6` terminó correctamente. La versión pública del dashboard muestra el emblema PXG en blanco sobre la navegación azul, sin rectángulo blanco y con proporción horizontal conservada. Las seis páginas apuntan al recurso local `pxg-logo-transparent-wide.png` y el archivo tiene color type RGBA con canal alfa real.
+
+
+## Login y autenticación de Supabase
+
+Se creó `login.html` con una composición de dos paneles, identidad PXG, formulario de correo y contraseña, mostrar/ocultar contraseña, recuperación de contraseña y actualización posterior al enlace de recuperación. La lógica está en `login.js` y usa únicamente `supabase.auth.signInWithPassword`, `resetPasswordForEmail`, `updateUser`, `getSession` y `signOut`; no se añadió ninguna service key ni credencial privada.
+
+La pantalla de login local cargó correctamente con la paleta profesional existente y la consola no mostró errores. Las páginas internas ya incluyen `auth-guard.js`, el estado `auth-pending` y un bloque de usuario/cierre de sesión en la navegación.
+
+
+La prueba de guard local confirmó que al abrir `index.html` sin una sesión activa, el contenido interno permanece oculto y el navegador redirige a `login.html?redirect=index.html%3Fauth%3Dguard-test`. La inspección del DOM confirmó que la página final es el login y que el guard ya no está presente allí, evitando ciclos de redirección.
+
+
+La validación local confirmó que el dashboard sin sesión redirige al login y conserva el destino original. El formulario de acceso se muestra correctamente, y al intentar continuar sin datos presenta un mensaje claro de validación: `Escribe un correo válido y una contraseña de al menos 6 caracteres.` No se enviaron credenciales durante esta prueba.
+
+
+La prueba local del hash `#type=recovery` mostró correctamente el formulario de nueva contraseña con confirmación, mensajes informativos y botones para actualizar o volver al login. La consola del modo recuperación no mostró errores de JavaScript.

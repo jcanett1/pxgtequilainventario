@@ -36,6 +36,14 @@ body {
   min-height: 100vh;
 }
 
+body.auth-pending {
+  visibility: hidden;
+}
+
+body.auth-ready {
+  visibility: visible;
+}
+
 .navbar {
   background: linear-gradient(110deg, var(--pxg-navy-dark), var(--pxg-navy)) !important;
   border-bottom: 3px solid var(--pxg-gold);
@@ -69,6 +77,37 @@ body {
 
 .navbar .nav-link:active {
   transform: scale(0.97);
+}
+
+.session-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-email {
+  max-width: 220px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.logout-btn {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+}
+
+.logout-btn:hover,
+.logout-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  color: #ffffff !important;
+}
+
+.logout-btn.is-loading {
+  opacity: 0.75;
 }
 
 .card {
@@ -301,6 +340,19 @@ body {
 :focus-visible {
   outline: 3px solid rgba(214, 167, 75, 0.72);
   outline-offset: 2px;
+}
+
+@media (max-width: 991.98px) {
+  .session-actions {
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .user-email {
+    max-width: 58vw;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
