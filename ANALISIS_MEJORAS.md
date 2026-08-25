@@ -93,3 +93,11 @@ A nivel funcional, recomiendo agregar niveles mínimos por producto o por catego
 [1]: https://jcanett1.github.io/pxgtequilainventario/index.html "Aplicación publicada — Dashboard PXG Tequila"
 [2]: https://github.com/jcanett1/pxgtequilainventario "Repositorio GitHub — PXG Tequila Inventarios"
 [3]: https://supabase.com/docs/guides/database/postgres/row-level-security "Supabase — Row Level Security"
+
+
+## Verificación pública posterior al commit
+
+Después del commit `8c44b43` y del push a `main`, GitHub Pages comenzó a servir el dashboard actualizado. La versión pública mostró 1 producto, 0 movimientos del día, un valor de stock de $360.00 MXN y el producto `sabritas` en la tabla reciente. La captura visual del navegador todavía mostró los contenedores de canvas sin contenido dibujado, por lo que conviene revisar la carga de Chart.js en el navegador del usuario si los gráficos no aparecen en su sesión; las métricas y la tabla sí quedaron confirmadas en la página pública.
+
+
+La publicación final ya entrega `supabase-client.js`, `ui-utils.js` y los scripts corregidos con código HTTP 200. Las métricas y la tabla pública cargan correctamente; sin embargo, el dashboard muestra un error aislado en el gráfico de movimientos recientes. Se continuará con la inspección de esa consulta antes de considerar la versión terminada.
