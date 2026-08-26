@@ -1,7 +1,7 @@
 import { Chart, registerables } from 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm'
 import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11/+esm'
 import { supabase } from './supabase-client.js'
-import { escapeHtml, formatCurrency, formatDate, localDateInputValue, setTableState, showToast } from './ui-utils.js'
+import { escapeHtml, formatCurrency, formatDate, formatProductStock, formatProductUnit, localDateInputValue, setTableState, showToast } from './ui-utils.js?v=20260826-presentation-2'
 
 Chart.register(...registerables)
 
@@ -180,12 +180,20 @@ async function loadRecentMovements() {
 }
 
 async function loadRecentProducts() {
-  const { data, error } = await supabase
+  let response = await supabase
     .from('productos')
-    .select('nombre, cantidad, precio, fecha_ingreso, categorias:categoria_id(nombre)')
+    .select('nombre, cantidad, tipo_presentacion, piezas_por_caja, precio, fecha_ingreso, categorias:categoria_id(nombre)')
     .order('fecha_ingreso', { ascending: false })
     .limit(5)
 
+  if (response.error && /tipo_presentacion|piezas_por_caja/i.test(response.error.message || '')) {
+    response = await supabase
+      .from('productos')
+      .select('nombre, cantidad, precio, fecha_ingreso, categorias:categoria_id(nombre)')
+      .order('fecha_ingreso', { ascending: false })
+      .limit(5)
+  }
+  const { data, error } = response
   if (error) throw error
 
   const tableBody = document.getElementById('recentProductsTableBody')
@@ -199,7 +207,7 @@ async function loadRecentProducts() {
     <tr>
       <td>${escapeHtml(producto.nombre)}</td>
       <td>${escapeHtml(producto.categorias?.nombre || 'Sin categoría')}</td>
-      <td>${Number(producto.cantidad) || 0}</td>
+      <td>${formatProductStock(producto)}<small class="d-block text-muted">${formatProductUnit(producto)}</small></td>
       <td>${formatCurrency(producto.precio)}</td>
       <td>${formatDate(producto.fecha_ingreso)}</td>
     </tr>

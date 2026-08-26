@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2'
 import { getCurrentUser, supabase } from './supabase-client.js'
-import { escapeHtml, formatCurrency, formatDate, friendlyError, localDateInputValue, showToast } from './ui-utils.js'
+import { escapeHtml, formatCurrency, formatDate, friendlyError, formatMovementUnit, formatProductSelectOption, getProductPresentation, formatProductStock, formatProductUnit, getProductQuantity, localDateInputValue, showToast } from './ui-utils.js?v=20260826-presentation-2'
 
 const PRODUCT_IMAGE_BUCKET = 'product-images'
 const PRODUCT_IMAGE_MAX_SIZE = 5 * 1024 * 1024
@@ -9,8 +9,10 @@ let productoEditando = null
 let productos = []
 let categorias = []
 let productImagesSupported = true
+let productPresentationSupported = true
 let imagePreviewObjectUrl = null
 let imageSetupWarningShown = false
+let presentationSetupWarningShown = false
 
 window.addEventListener('DOMContentLoaded', initializeProducts)
 
@@ -19,6 +21,7 @@ async function initializeProducts() {
     bindProductEvents()
     await Promise.all([cargarProductos(), cargarCategorias(), cargarProveedores()])
     document.getElementById('productEntryDate').value = localDateInputValue()
+    actualizarCamposPresentacion()
   } catch (error) {
     console.error('Error inicial:', error)
     mostrarError('No se pudo cargar el módulo de productos: ' + friendlyError(error))
@@ -34,6 +37,8 @@ function bindProductEvents() {
   document.getElementById('productCategoryFilter')?.addEventListener('change', renderProductos)
   document.getElementById('clearProductFilters')?.addEventListener('click', limpiarFiltros)
   document.getElementById('productImage')?.addEventListener('change', handleImageSelected)
+  document.getElementById('productPresentation')?.addEventListener('change', actualizarCamposPresentacion)
+  document.getElementById('existingProduct')?.addEventListener('change', actualizarEtiquetasAjusteStock)
   document.getElementById('addCategoryForm')?.addEventListener('submit', guardarCategoria)
   document.getElementById('categoriesList')?.addEventListener('click', handleCategoryAction)
   document.getElementById('openCategoriesFromProduct')?.addEventListener('click', abrirGestorCategorias)
@@ -42,16 +47,25 @@ function bindProductEvents() {
 }
 
 async function cargarProductos() {
-  const fieldsWithImage = 'id, nombre, precio, cantidad, descripcion, ubicacion, fecha_ingreso, codigo_barras, categoria_id, proveedor_id, image_url, categorias:categoria_id(id, nombre), proveedores:proveedor_id(id, nombre)'
+  const fieldsWithImage = 'id, nombre, precio, cantidad, tipo_presentacion, piezas_por_caja, descripcion, ubicacion, fecha_ingreso, codigo_barras, categoria_id, proveedor_id, image_url, categorias:categoria_id(id, nombre), proveedores:proveedor_id(id, nombre)'
+  const fieldsWithPresentation = 'id, nombre, precio, cantidad, tipo_presentacion, piezas_por_caja, descripcion, ubicacion, fecha_ingreso, codigo_barras, categoria_id, proveedor_id, categorias:categoria_id(id, nombre), proveedores:proveedor_id(id, nombre)'
   const legacyFields = 'id, nombre, precio, cantidad, descripcion, ubicacion, fecha_ingreso, codigo_barras, categoria_id, proveedor_id, categorias:categoria_id(id, nombre), proveedores:proveedor_id(id, nombre)'
 
   let response = await supabase.from('productos').select(fieldsWithImage).order('nombre', { ascending: true })
-  if (response.error && /image_url|column/i.test(response.error.message || '')) {
+  if (response.error && /image_url/i.test(response.error.message || '')) {
     productImagesSupported = false
-    response = await supabase.from('productos').select(legacyFields).order('nombre', { ascending: true })
+    response = await supabase.from('productos').select(fieldsWithPresentation).order('nombre', { ascending: true })
     if (!imageSetupWarningShown) {
       showToast(Swal, 'La tabla aún necesita la configuración de imágenes para activar las cargas.', 'warning')
       imageSetupWarningShown = true
+    }
+  }
+  if (response.error && /tipo_presentacion|piezas_por_caja/i.test(response.error.message || '')) {
+    productPresentationSupported = false
+    response = await supabase.from('productos').select(legacyFields).order('nombre', { ascending: true })
+    if (!presentationSetupWarningShown) {
+      showToast(Swal, 'Aplica la migración de presentación para activar cajas y piezas.', 'warning')
+      presentationSetupWarningShown = true
     }
   }
 
@@ -97,9 +111,10 @@ function renderProductos() {
 }
 
 function renderProductCard(producto) {
-  const quantity = Number(producto.cantidad) || 0
+  const quantity = getProductQuantity(producto)
   const stockState = quantity <= 5 ? 'low' : quantity <= 15 ? 'medium' : ''
-  const stockLabel = quantity === 1 ? '1 unidad' : `${quantity} unidades`
+  const stockLabel = formatProductStock(producto)
+  const presentationLabel = formatProductUnit(producto)
   const imageUrl = getSafeImageUrl(producto.image_url)
   const categoryName = producto.categorias?.nombre || 'Sin categoría'
   const description = producto.descripcion || 'Sin descripción disponible.'
@@ -126,6 +141,14 @@ function renderProductCard(producto) {
               <strong class="product-card-price">${formatCurrency(producto.precio)}</strong>
             </div>
             <div class="product-card-data-item">
+              <span class="product-card-data-label">Presentación</span>
+              <span class="product-card-data-value" title="${escapeHtml(presentationLabel)}">${escapeHtml(presentationLabel)}</span>
+            </div>
+            <div class="product-card-data-item">
+              <span class="product-card-data-label">Existencia</span>
+              <span class="product-card-data-value" title="${escapeHtml(stockLabel)}">${escapeHtml(stockLabel)}</span>
+            </div>
+            <div class="product-card-data-item">
               <span class="product-card-data-label">Proveedor</span>
               <span class="product-card-data-value" title="${escapeHtml(provider)}">${escapeHtml(provider)}</span>
             </div>
@@ -147,6 +170,24 @@ function renderProductCard(producto) {
         </div>
       </article>
     </div>`
+}
+
+function actualizarCamposPresentacion() {
+  const presentation = document.getElementById('productPresentation')?.value === 'caja' ? 'caja' : 'pieza'
+  const piecesGroup = document.getElementById('productPiecesPerBoxGroup')
+  const piecesInput = document.getElementById('productPiecesPerBox')
+  const quantityLabel = document.getElementById('productQuantityLabel')
+  const note = document.getElementById('productPresentationNote')
+  if (!piecesGroup || !piecesInput || !quantityLabel || !note) return
+
+  const isBox = presentation === 'caja'
+  piecesGroup.classList.toggle('d-none', !isBox)
+  piecesInput.disabled = !isBox
+  if (!isBox) piecesInput.value = '1'
+  quantityLabel.textContent = isBox ? 'Cantidad inicial (cajas)' : 'Cantidad inicial (piezas)'
+  note.innerHTML = isBox
+    ? '<i class="fas fa-boxes-stacked me-2" aria-hidden="true"></i>El inventario se manejará por cajas. Cada caja contiene la cantidad de piezas indicada.'
+    : '<i class="fas fa-cube me-2" aria-hidden="true"></i>El inventario se manejará por piezas individuales.'
 }
 
 function limpiarFiltros() {
@@ -223,10 +264,26 @@ function cargarProductosExistentes() {
   productos.forEach(producto => {
     const option = document.createElement('option')
     option.value = producto.id
-    option.textContent = `${producto.nombre} (${Number(producto.cantidad) || 0} en stock)`
+    option.textContent = formatProductSelectOption(producto)
     selectProductos.appendChild(option)
   })
   selectProductos.value = currentValue
+  actualizarEtiquetasAjusteStock()
+}
+
+function actualizarEtiquetasAjusteStock() {
+  const select = document.getElementById('existingProduct')
+  const label = document.getElementById('additionalStockLabel')
+  const hint = document.getElementById('additionalStockHint')
+  const input = document.getElementById('additionalStock')
+  if (!select || !label || !hint || !input) return
+  const producto = productos.find(item => String(item.id) === String(select.value))
+  const isBox = producto?.tipo_presentacion === 'caja'
+  label.textContent = isBox ? 'Cajas a agregar' : 'Piezas a agregar'
+  hint.textContent = producto
+    ? isBox ? `Cada caja contiene ${getProductPresentation(producto).piecesPerBox} piezas.` : 'Se agregarán piezas individuales al inventario.'
+    : 'La cantidad se agregará según la presentación del producto.'
+  input.placeholder = isBox ? 'Ej. 3 cajas' : 'Ej. 10 piezas'
 }
 
 async function guardarProducto() {
@@ -243,6 +300,15 @@ async function guardarProducto() {
     return mostrarError('Primero aplica la configuración de imágenes indicada en el repositorio y vuelve a intentarlo.')
   }
 
+  const presentation = document.getElementById('productPresentation').value === 'caja' ? 'caja' : 'pieza'
+  const piecesPerBox = presentation === 'caja' ? Number.parseInt(document.getElementById('productPiecesPerBox').value, 10) : 1
+  if (!productPresentationSupported && presentation === 'caja') {
+    return mostrarError('Aplica primero la migración de presentación en Supabase para registrar productos por caja.')
+  }
+  if (presentation === 'caja' && (!Number.isInteger(piecesPerBox) || piecesPerBox <= 0)) {
+    return mostrarError('Indica cuántas piezas contiene cada caja.')
+  }
+
   const productData = {
     nombre: document.getElementById('productName').value.trim(),
     categoria_id: document.getElementById('productCategory').value || null,
@@ -257,6 +323,10 @@ async function guardarProducto() {
   if (!productData.nombre) return mostrarError('El nombre del producto es requerido')
   if (!Number.isFinite(productData.precio) || productData.precio <= 0) return mostrarError('El precio debe ser mayor que cero')
   if (productData.cantidad < 0) return mostrarError('La cantidad no puede ser negativa')
+  if (productPresentationSupported) {
+    productData.tipo_presentacion = presentation
+    productData.piezas_por_caja = piecesPerBox
+  }
 
   const saveButton = document.getElementById('saveProductBtn')
   saveButton.disabled = true
@@ -391,7 +461,7 @@ async function agregarStockExistente() {
   const button = document.getElementById('addStockBtn')
   button.disabled = true
   try {
-    const { data: producto, error: fetchError } = await supabase.from('productos').select('id, cantidad, nombre').eq('id', productoId).single()
+    const { data: producto, error: fetchError } = await supabase.from('productos').select('id, cantidad, nombre, tipo_presentacion, piezas_por_caja').eq('id', productoId).single()
     if (fetchError) throw fetchError
 
     const currentQuantity = Number(producto.cantidad) || 0
@@ -408,7 +478,7 @@ async function agregarStockExistente() {
       throw movementError
     }
 
-    await mostrarExito(`Se agregaron ${cantidad} unidades a "${producto.nombre}"`)
+    await mostrarExito(`Se agregaron ${cantidad} ${formatMovementUnit(producto, cantidad)} a "${producto.nombre}"`)
     bootstrap.Modal.getInstance(document.getElementById('addExistingModal'))?.hide()
     form.reset()
     form.classList.remove('was-validated')
@@ -436,6 +506,9 @@ function resetFormularioProducto() {
   document.getElementById('addProductModalLabel').textContent = 'Agregar Nuevo Producto'
   document.getElementById('saveProductBtn').textContent = 'Guardar Producto'
   document.getElementById('productEntryDate').value = localDateInputValue()
+  document.getElementById('productPresentation').value = 'pieza'
+  document.getElementById('productPiecesPerBox').value = '1'
+  actualizarCamposPresentacion()
   mostrarImagenPreview('')
 }
 
@@ -456,6 +529,9 @@ async function editarProducto(id) {
     if (error) throw error
     productoEditando = producto
     document.getElementById('productName').value = producto.nombre || ''
+    document.getElementById('productPresentation').value = producto.tipo_presentacion === 'caja' ? 'caja' : 'pieza'
+    document.getElementById('productPiecesPerBox').value = String(Math.max(1, Number.parseInt(producto.piezas_por_caja, 10) || 1))
+    actualizarCamposPresentacion()
     renderCategoryOptions(producto.categoria_id || '')
     document.getElementById('productCategory').value = producto.categoria_id || ''
     document.getElementById('productPrice').value = producto.precio ?? ''
@@ -477,6 +553,7 @@ async function editarProducto(id) {
 async function mostrarModalAjuste(id) {
   const select = document.getElementById('existingProduct')
   if (select) select.value = String(id)
+  actualizarEtiquetasAjusteStock()
   bootstrap.Modal.getOrCreateInstance(document.getElementById('addExistingModal')).show()
 }
 
@@ -515,14 +592,14 @@ async function verHistorial(id) {
       <tr>
         <td>${formatDate(mov.created_at, true)}</td>
         <td><span class="badge ${mov.tipo === 'entrada' ? 'bg-success' : mov.tipo === 'salida' ? 'bg-danger' : 'bg-warning text-dark'}">${escapeHtml(mov.tipo || 'ajuste')}</span></td>
-        <td>${Number(mov.cantidad) || 0}</td>
+        <td>${Number(mov.cantidad) || 0} ${formatMovementUnit(producto, mov.cantidad)}</td>
         <td>${escapeHtml(mov.motivo || '-')}</td>
         <td>${escapeHtml(mov.destinatario || '-')}</td>
       </tr>`).join('')
 
     await Swal.fire({
       title: `Historial: ${escapeHtml(producto.nombre)}`,
-      html: rows ? `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Fecha</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th><th>Destinatario</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="text-muted">No hay movimientos registrados para este producto.</p>',
+      html: rows ? `<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Fecha</th><th>Tipo</th><th>Cantidad / unidad</th><th>Motivo</th><th>Destinatario</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="text-muted">No hay movimientos registrados para este producto.</p>',
       width: 900,
       confirmButtonText: 'Cerrar'
     })

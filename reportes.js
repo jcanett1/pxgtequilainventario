@@ -3,7 +3,7 @@ import * as XLSX from 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm'
 import { jsPDF } from 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm'
 import autoTable from 'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/+esm'
 import { supabase } from './supabase-client.js'
-import { escapeHtml, formatCurrency, formatDate, friendlyError, showToast } from './ui-utils.js'
+import { escapeHtml, formatCurrency, formatDate, formatMovementUnit, formatProductStock, formatProductUnit, friendlyError, getProductQuantity, showToast } from './ui-utils.js?v=20260826-presentation-2'
 
 window.addEventListener('DOMContentLoaded', () => {
   loadFiltersData()
@@ -87,12 +87,20 @@ async function generarReporteMovimientos() {
     const startDate = document.getElementById('movimientosStartDate')?.value
     const endDate = document.getElementById('movimientosEndDate')?.value
     const productoId = document.getElementById('movimientosProducto')?.value
-    let query = supabase.from('movimientos').select('id, created_at, tipo, cantidad, motivo, usuario_id, destinatario, productos:producto_id(nombre)').order('created_at', { ascending: false })
+    let query = supabase.from('movimientos').select('id, created_at, tipo, cantidad, motivo, usuario_id, destinatario, productos:producto_id(nombre, tipo_presentacion, piezas_por_caja)').order('created_at', { ascending: false })
     if (startDate) query = query.gte('created_at', `${startDate}T00:00:00`)
     if (endDate) query = query.lt('created_at', `${endDate}T23:59:59.999`)
     if (productoId) query = query.eq('producto_id', productoId)
 
-    const { data, error } = await query
+    let response = await query
+    if (response.error && /tipo_presentacion|piezas_por_caja/i.test(response.error.message || '')) {
+      let legacyQuery = supabase.from('movimientos').select('id, created_at, tipo, cantidad, motivo, usuario_id, destinatario, productos:producto_id(nombre)').order('created_at', { ascending: false })
+      if (startDate) legacyQuery = legacyQuery.gte('created_at', `${startDate}T00:00:00`)
+      if (endDate) legacyQuery = legacyQuery.lt('created_at', `${endDate}T23:59:59.999`)
+      if (productoId) legacyQuery = legacyQuery.eq('producto_id', productoId)
+      response = await legacyQuery
+    }
+    const { data, error } = response
     if (error) throw error
     const tableBody = document.getElementById('movimientosTableBody')
     if (!tableBody) return
@@ -102,7 +110,7 @@ async function generarReporteMovimientos() {
         <td>${formatDate(movimiento.created_at, true)}</td>
         <td>${escapeHtml(movimiento.productos?.nombre || 'Producto eliminado')}</td>
         <td><span class="badge ${movementBadge(movimiento.tipo)}">${escapeHtml(movimiento.tipo || '-')}</span></td>
-        <td>${Number(movimiento.cantidad) || 0}</td>
+        <td>${Number(movimiento.cantidad) || 0} ${formatMovementUnit(movimiento.productos || {}, movimiento.cantidad)}</td>
         <td>${escapeHtml(movimiento.motivo || '-')}</td>
         <td>${escapeHtml(movimiento.usuario_id ? movimiento.usuario_id.slice(0, 8) + '…' : 'Sistema')}</td>
         <td>${escapeHtml(movimiento.destinatario || '-')}</td>
@@ -119,11 +127,18 @@ async function generarReporteProductos() {
   try {
     const productoId = document.getElementById('productosProducto')?.value
     const categoriaId = document.getElementById('productosCategoria')?.value
-    let query = supabase.from('productos').select('id, nombre, descripcion, categoria_id, cantidad, precio, fecha_ingreso, categorias:categoria_id(nombre)').order('nombre')
+    let query = supabase.from('productos').select('id, nombre, descripcion, categoria_id, cantidad, tipo_presentacion, piezas_por_caja, precio, fecha_ingreso, categorias:categoria_id(nombre)').order('nombre')
     if (productoId) query = query.eq('id', productoId)
     if (categoriaId) query = query.eq('categoria_id', categoriaId)
 
-    const { data, error } = await query
+    let response = await query
+    if (response.error && /tipo_presentacion|piezas_por_caja/i.test(response.error.message || '')) {
+      let legacyQuery = supabase.from('productos').select('id, nombre, descripcion, categoria_id, cantidad, precio, fecha_ingreso, categorias:categoria_id(nombre)').order('nombre')
+      if (productoId) legacyQuery = legacyQuery.eq('id', productoId)
+      if (categoriaId) legacyQuery = legacyQuery.eq('categoria_id', categoriaId)
+      response = await legacyQuery
+    }
+    const { data, error } = response
     if (error) throw error
     const tableBody = document.getElementById('productosTableBody')
     if (!tableBody) return
@@ -132,7 +147,7 @@ async function generarReporteProductos() {
         <td>${escapeHtml(producto.id)}</td>
         <td>${escapeHtml(producto.nombre)}</td>
         <td>${escapeHtml(producto.categorias?.nombre || 'Sin categoría')}</td>
-        <td>${Number(producto.cantidad) || 0}</td>
+        <td>${formatProductStock(producto)}<small class="d-block text-muted">${formatProductUnit(producto)}</small></td>
         <td>${formatCurrency(producto.precio)}</td>
         <td>${formatDate(producto.fecha_ingreso)}</td>
         <td>${escapeHtml(producto.descripcion || '-')}</td>
@@ -148,22 +163,28 @@ async function generarReporteProductos() {
 async function generarReporteStock() {
   try {
     const productoId = document.getElementById('stockProducto')?.value
-    let query = supabase.from('productos').select('id, nombre, cantidad, precio, categorias:categoria_id(nombre)').order('nombre')
+    let query = supabase.from('productos').select('id, nombre, cantidad, tipo_presentacion, piezas_por_caja, precio, categorias:categoria_id(nombre)').order('nombre')
     if (productoId) query = query.eq('id', productoId)
 
-    const { data, error } = await query
+    let response = await query
+    if (response.error && /tipo_presentacion|piezas_por_caja/i.test(response.error.message || '')) {
+      let legacyQuery = supabase.from('productos').select('id, nombre, cantidad, precio, categorias:categoria_id(nombre)').order('nombre')
+      if (productoId) legacyQuery = legacyQuery.eq('id', productoId)
+      response = await legacyQuery
+    }
+    const { data, error } = response
     if (error) throw error
     const tableBody = document.getElementById('stockTableBody')
     if (!tableBody) return
     tableBody.innerHTML = data?.length ? data.map(producto => {
-      const cantidad = Number(producto.cantidad) || 0
+      const cantidad = getProductQuantity(producto)
       const valorTotal = (Number(producto.precio) || 0) * cantidad
       return `
         <tr>
           <td>${escapeHtml(producto.id)}</td>
           <td>${escapeHtml(producto.nombre)}</td>
           <td>${escapeHtml(producto.categorias?.nombre || 'Sin categoría')}</td>
-          <td>${cantidad}</td>
+          <td>${formatProductStock(producto)}<small class="d-block text-muted">${formatProductUnit(producto)}</small></td>
           <td><span class="badge ${stockBadge(cantidad)}">${stockStatus(cantidad)}</span></td>
           <td>${formatCurrency(producto.precio)}</td>
           <td>${formatCurrency(valorTotal)}</td>

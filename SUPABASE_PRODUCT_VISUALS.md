@@ -25,3 +25,8 @@ Para crear una categoría, abre **Gestionar categorías**, escribe el nombre y p
 Para crear o editar un producto, selecciona una imagen JPG, PNG, WEBP o GIF de hasta 5 MB. La pantalla muestra una previsualización antes de guardar y almacena la URL pública en `productos.image_url`.
 
 La búsqueda revisa el nombre, la descripción y el código de barras. El filtro de categoría se puede combinar con la búsqueda por texto y se limpia con el botón **Limpiar**.
+
+
+## Presentación de inventario
+
+Para activar la selección de productos por pieza o caja, aplica también `supabase/migrations/20260826000001_product_presentation.sql`. La guía completa de uso está en `SUPABASE_PRODUCT_PRESENTATION.md`.

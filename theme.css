@@ -1110,3 +1110,22 @@ body.auth-ready {
     font-size: 1.1rem;
   }
 }
+
+
+.product-presentation-note {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  color: var(--pxg-navy);
+  background: rgba(214, 167, 75, 0.11);
+  border: 1px solid rgba(214, 167, 75, 0.28);
+  border-radius: 9px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.product-presentation-note i {
+  flex: 0 0 auto;
+  color: var(--pxg-gold-dark);
+}

@@ -69,3 +69,50 @@ export function friendlyError(error) {
   if (/foreign key/i.test(message)) return 'No se puede completar porque el registro relacionado ya no existe.'
   return message || 'Ocurrió un error inesperado. Intenta nuevamente.'
 }
+
+
+export function getProductPresentation(producto = {}) {
+  const type = producto.tipo_presentacion === 'caja' ? 'caja' : 'pieza'
+  const piecesPerBox = type === 'caja'
+    ? Math.max(1, Number.parseInt(producto.piezas_por_caja, 10) || 1)
+    : 1
+  return { type, piecesPerBox }
+}
+
+export function formatProductUnit(producto = {}) {
+  const { type, piecesPerBox } = getProductPresentation(producto)
+  return type === 'caja' ? `Caja de ${piecesPerBox} piezas` : 'Por pieza'
+}
+
+export function getProductQuantity(producto = {}) {
+  return Math.max(0, Number.parseInt(producto.cantidad, 10) || 0)
+}
+
+export function getProductTotalPieces(producto = {}) {
+  const { type, piecesPerBox } = getProductPresentation(producto)
+  const quantity = getProductQuantity(producto)
+  return type === 'caja' ? quantity * piecesPerBox : quantity
+}
+
+export function formatProductStock(producto = {}) {
+  const { type, piecesPerBox } = getProductPresentation(producto)
+  const quantity = getProductQuantity(producto)
+  if (type === 'caja') {
+    const boxesLabel = quantity === 1 ? 'caja' : 'cajas'
+    const pieces = quantity * piecesPerBox
+    const piecesLabel = pieces === 1 ? 'pieza' : 'piezas'
+    return `${quantity} ${boxesLabel} · ${pieces} ${piecesLabel}`
+  }
+  return `${quantity} ${quantity === 1 ? 'pieza' : 'piezas'}`
+}
+
+export function formatProductSelectOption(producto = {}) {
+  return `${producto.nombre || 'Producto'} · ${formatProductStock(producto)}`
+}
+
+export function formatMovementUnit(producto = {}, quantity = 1) {
+  const { type } = getProductPresentation(producto)
+  const safeQuantity = Math.max(0, Number.parseInt(quantity, 10) || 0)
+  if (type === 'caja') return safeQuantity === 1 ? 'caja' : 'cajas'
+  return safeQuantity === 1 ? 'pieza' : 'piezas'
+}
