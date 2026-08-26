@@ -201,7 +201,7 @@
       margin-bottom: 2rem;
     }
   </style>
-  <link rel="stylesheet" href="theme.css?v=20260825-profile">
+  <link rel="stylesheet" href="theme.css?v=20260826-products">
 </head>
 <body class="auth-pending">
   <nav class="navbar navbar-expand-lg navbar-dark mb-4">
@@ -246,46 +246,60 @@
     </div>
   </nav>
 
-  <div class="container">
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-boxes me-2"></i>Productos</h5>
-            <div>
-              <button class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addProductModal">
-                <i class="fas fa-plus"></i> Agregar Nuevo Producto
-              </button>
-              <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addExistingModal">
-                <i class="fas fa-plus-circle"></i> Agregar Existente
-              </button>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-striped" id="productosTable">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Categoría</th>
-                    <th>Precio</th>
-                    <th>Cantidad</th>
-                    <th>Proveedor</th>
-                    <th>Fecha de ingreso</th>
-                    <th>Ubicación</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody id="productosTableBody">
-                  <!-- La tabla se poblará dinámicamente con datos de Supabase -->
-                </tbody>
-              </table>
-            </div>
-          </div>
+  <main class="container products-page">
+    <section class="products-hero mb-4">
+      <div>
+        <span class="eyebrow"><i class="fas fa-layer-group me-2"></i>Catálogo de inventario</span>
+        <h1 class="products-hero-title">Productos que se encuentran fácil</h1>
+        <p class="products-hero-copy">Organiza tu catálogo, identifica cada producto de un vistazo y mantén el inventario bajo control.</p>
+      </div>
+      <div class="products-hero-icon" aria-hidden="true"><i class="fas fa-box-open"></i></div>
+    </section>
+
+    <section class="card products-panel mb-5">
+      <div class="card-header products-panel-header">
+        <div>
+          <span class="eyebrow eyebrow-dark">Catálogo</span>
+          <h2 class="products-panel-title mb-0"><i class="fas fa-boxes-stacked me-2"></i>Mis productos</h2>
+        </div>
+        <div class="products-panel-actions">
+          <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#categoriesModal">
+            <i class="fas fa-tags me-1"></i>Gestionar categorías
+          </button>
+          <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addProductModal">
+            <i class="fas fa-plus me-1"></i>Nuevo producto
+          </button>
+          <button class="btn btn-success btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#addExistingModal">
+            <i class="fas fa-plus-circle me-1"></i>Agregar stock
+          </button>
         </div>
       </div>
-    </div>
-  </div>
+      <div class="card-body products-panel-body">
+        <div class="products-toolbar" role="search" aria-label="Filtros de productos">
+          <div class="product-search-wrap flex-grow-1">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input class="form-control product-search" type="search" id="productSearch" placeholder="Buscar por nombre..." autocomplete="off" aria-label="Buscar productos por nombre">
+          </div>
+          <div class="product-filter-wrap">
+            <label class="visually-hidden" for="productCategoryFilter">Filtrar por categoría</label>
+            <select class="form-select" id="productCategoryFilter">
+              <option value="">Todas las categorías</option>
+            </select>
+          </div>
+          <button class="btn btn-light product-clear-filter" type="button" id="clearProductFilters" title="Limpiar filtros">
+            <i class="fas fa-rotate-left me-1"></i>Limpiar
+          </button>
+        </div>
+        <div class="products-results-bar">
+          <span id="productResultsCount" class="products-results-count">Cargando productos...</span>
+          <span class="products-results-hint"><i class="fas fa-circle-info me-1"></i>Usa los filtros para encontrar un producto rápidamente</span>
+        </div>
+        <div class="row g-4" id="productsGrid" aria-live="polite">
+          <div class="col-12"><div class="products-loading"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Cargando catálogo...</div></div>
+        </div>
+      </div>
+    </section>
+  </main>
 
   <!-- Modal Agregar Nuevo Producto -->
   <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
@@ -299,17 +313,33 @@
           <form id="addProductForm">
             <div class="row">
               <div class="col-md-6 mb-3">
-                <label for="productName" class="form-label">Nombre del Producto</label>
+                <label for="productName" class="form-label">Nombre del producto</label>
                 <input type="text" class="form-control" id="productName" required>
               </div>
-              <!-- En el modal de agregar producto -->
-<div class="col-md-6">
-  <label for="productCategory" class="form-label">Categoría</label>
-  <select class="form-select select-categoria" id="productCategory">
-    <option value="">Seleccionar categoría</option>
-    <!-- Las categorías se cargarán dinámicamente -->
-  </select>
-</div>
+              <div class="col-md-6 mb-3">
+                <label for="productCategory" class="form-label">Categoría</label>
+                <div class="input-group">
+                  <select class="form-select select-categoria" id="productCategory">
+                    <option value="">Seleccionar categoría</option>
+                  </select>
+                  <button class="btn btn-outline-primary" type="button" id="openCategoriesFromProduct" title="Agregar categoría">
+                    <i class="fas fa-plus" aria-hidden="true"></i><span class="visually-hidden">Agregar categoría</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="row align-items-start">
+              <div class="col-md-6 mb-3">
+                <label for="productImage" class="form-label">Imagen del producto</label>
+                <input class="form-control" type="file" id="productImage" accept="image/png,image/jpeg,image/webp,image/gif">
+                <div class="form-text">JPG, PNG, WEBP o GIF. Máximo 5 MB.</div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div id="productImagePreview" class="product-image-preview empty" aria-live="polite">
+                  <i class="fas fa-image" aria-hidden="true"></i>
+                  <span>La imagen aparecerá aquí</span>
+                </div>
+              </div>
             </div>
             <div class="row">
               <div class="col-md-6 mb-3">
@@ -386,7 +416,45 @@
     </div>
   </div>
 
-   <!-- Footer -->
+  <!-- Modal de categorías -->
+  <div class="modal fade" id="categoriesModal" tabindex="-1" aria-labelledby="categoriesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <span class="eyebrow">Organización</span>
+            <h5 class="modal-title" id="categoriesModalLabel">Gestionar categorías</h5>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addCategoryForm" class="category-create-form">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-8">
+                <label for="categoryName" class="form-label">Nueva categoría</label>
+                <input type="text" class="form-control" id="categoryName" maxlength="80" placeholder="Ej. Bebidas, Botanas, Tequila..." required>
+              </div>
+              <div class="col-md-4">
+                <button class="btn btn-primary w-100" type="submit" id="saveCategoryBtn"><i class="fas fa-plus me-1"></i>Agregar categoría</button>
+              </div>
+            </div>
+          </form>
+          <div class="category-list-heading">
+            <h6 class="mb-0">Categorías disponibles</h6>
+            <span class="text-muted small" id="categoryResultsCount"></span>
+          </div>
+          <div id="categoriesList" class="categories-list" aria-live="polite">
+            <div class="products-loading"><span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Cargando categorías...</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
 <footer class="footer mt-5">
   <div class="container">
     <div class="row justify-content-center text-center text-md-start">
@@ -431,6 +499,6 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module" src="./auth-guard.js?v=20260825-auth"></script>
-  <script type="module" src="./productos.js?v=20260825"></script>
+  <script type="module" src="./productos.js?v=20260826-products"></script>
 </body>
 </html>
