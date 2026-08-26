@@ -220,7 +220,8 @@ body.auth-ready {
 }
 
 .table thead th {
-  color: #ffffff;
+  background-color: var(--pxg-navy) !important;
+  color: #ffffff !important;
   font-size: 0.78rem;
   letter-spacing: 0.03em;
   text-transform: uppercase;
