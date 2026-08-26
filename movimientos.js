@@ -2,12 +2,17 @@ import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11/+esm'
 import { getCurrentUser, supabase } from './supabase-client.js'
 import { escapeHtml, formatDate, friendlyError, localDateInputValue, setTableState, showToast } from './ui-utils.js'
 
+let productosDisponibles = []
+
 window.addEventListener('DOMContentLoaded', initializeMovements)
 
 async function initializeMovements() {
   try {
     await Promise.all([cargarProductos(), cargarMovimientos()])
     document.getElementById('salidaFecha').value = localDateInputValue()
+    document.getElementById('entradaFecha').value = localDateInputValue()
+    document.getElementById('entradaProducto')?.addEventListener('change', actualizarResumenEntrada)
+    document.getElementById('registrarEntradaBtn')?.addEventListener('click', registrarEntrada)
     document.getElementById('registrarSalidaBtn')?.addEventListener('click', registrarSalida)
     document.getElementById('saveMovementBtn')?.addEventListener('click', guardarMovimiento)
     document.getElementById('updateMovementBtn')?.addEventListener('click', actualizarMovimiento)
@@ -25,17 +30,36 @@ async function cargarProductos() {
     .select('id, nombre, cantidad')
     .order('nombre')
   if (error) throw error
+  productosDisponibles = productos || []
 
-  const selects = ['salidaProducto', 'movementProduct', 'editMovementProduct']
+  const selects = ['salidaProducto', 'entradaProducto', 'movementProduct', 'editMovementProduct']
   selects.forEach(id => {
     const select = document.getElementById(id)
     if (!select) return
     select.innerHTML = '<option value="">Seleccionar producto</option>'
-    ;(productos || []).forEach(producto => {
+    productosDisponibles.forEach(producto => {
       const option = new Option(`${producto.nombre} (${Number(producto.cantidad) || 0} disponibles)`, producto.id)
       select.add(option)
     })
   })
+  actualizarResumenEntrada()
+}
+
+function actualizarResumenEntrada() {
+  const select = document.getElementById('entradaProducto')
+  const summary = document.getElementById('entradaResumen')
+  if (!select || !summary) return
+
+  const producto = productosDisponibles.find(item => String(item.id) === String(select.value))
+  if (!producto) {
+    summary.className = 'movement-entry-summary'
+    summary.innerHTML = '<i class="fas fa-circle-info me-2" aria-hidden="true"></i><span>Selecciona un producto para consultar su existencia actual.</span>'
+    return
+  }
+
+  const cantidad = Number(producto.cantidad) || 0
+  summary.className = 'movement-entry-summary is-selected'
+  summary.innerHTML = `<i class="fas fa-boxes-stacked me-2" aria-hidden="true"></i><span><strong>${escapeHtml(producto.nombre)}</strong> tiene actualmente <strong>${cantidad} ${cantidad === 1 ? 'unidad' : 'unidades'}</strong> en inventario. La nueva entrada se sumará a esa existencia.</span>`
 }
 
 async function cargarMovimientos() {
@@ -105,6 +129,40 @@ async function registrarSalida() {
       form.reset()
       form.classList.remove('was-validated')
       document.getElementById('salidaFecha').value = localDateInputValue()
+      await Promise.all([cargarProductos(), cargarMovimientos()])
+    }
+  })
+}
+
+async function registrarEntrada() {
+  const form = document.getElementById('entradaForm')
+  if (!form.checkValidity()) {
+    form.classList.add('was-validated')
+    form.reportValidity()
+    return
+  }
+
+  const productoId = document.getElementById('entradaProducto').value
+  const cantidad = Number.parseInt(document.getElementById('entradaCantidad').value, 10)
+  const motivo = document.getElementById('entradaMotivo').value.trim()
+  const fecha = document.getElementById('entradaFecha').value
+
+  if (!productoId || !Number.isInteger(cantidad) || cantidad <= 0) {
+    return showToast(Swal, 'Selecciona un producto y captura una cantidad entera mayor que cero.', 'error')
+  }
+
+  await registrarMovimientoConStock({
+    productoId,
+    tipo: 'entrada',
+    cantidad,
+    motivo: motivo || 'Entrada de inventario',
+    createdAt: fecha ? `${fecha}T12:00:00` : undefined,
+    onSuccess: async () => {
+      await showToast(Swal, 'Entrada registrada correctamente. El stock fue actualizado.', 'success')
+      form.reset()
+      form.classList.remove('was-validated')
+      document.getElementById('entradaFecha').value = localDateInputValue()
+      actualizarResumenEntrada()
       await Promise.all([cargarProductos(), cargarMovimientos()])
     }
   })
@@ -217,3 +275,4 @@ function manejarAccionMovimiento(event) {
 
 window.cargarMovimientos = cargarMovimientos
 window.registrarSalida = registrarSalida
+window.registrarEntrada = registrarEntrada

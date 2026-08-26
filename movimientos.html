@@ -201,7 +201,7 @@
       margin-bottom: 2rem;
     }
   </style>
-  <link rel="stylesheet" href="theme.css?v=20260825-profile">
+  <link rel="stylesheet" href="theme.css?v=20260826-movements">
 </head>
 <body class="auth-pending">
   <nav class="navbar navbar-expand-lg navbar-dark mb-4">
@@ -264,6 +264,11 @@
               <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="salida-tab" data-bs-toggle="tab" data-bs-target="#salida" type="button" role="tab" aria-controls="salida" aria-selected="true">
                   <i class="fas fa-arrow-right me-1"></i> Salida de Productos
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="entrada-tab" data-bs-toggle="tab" data-bs-target="#entrada" type="button" role="tab" aria-controls="entrada" aria-selected="false">
+                  <i class="fas fa-arrow-left me-1"></i> Entradas
                 </button>
               </li>
               <li class="nav-item" role="presentation">
@@ -331,6 +336,54 @@
                 </div>
               </div>
               
+              <!-- Entrada de Productos Tab -->
+              <div class="tab-pane fade" id="entrada" role="tabpanel" aria-labelledby="entrada-tab">
+                <div class="movement-entry-card">
+                  <div class="movement-entry-intro">
+                    <div class="movement-entry-icon"><i class="fas fa-arrow-down-to-bracket" aria-hidden="true"></i></div>
+                    <div>
+                      <span class="movement-kicker">Abastecimiento</span>
+                      <h5 class="mb-1">Registrar entrada de productos</h5>
+                      <p class="mb-0">Selecciona un producto que ya esté registrado y agrega la cantidad recibida al inventario.</p>
+                    </div>
+                  </div>
+                  <form id="entradaForm" class="movement-entry-form">
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="entradaProducto" class="form-label">Producto registrado</label>
+                        <select class="form-select" id="entradaProducto" required>
+                          <option value="">Seleccionar producto</option>
+                          <!-- Opciones se cargarán dinámicamente desde la tabla de productos -->
+                        </select>
+                        <div class="form-text">Solo puedes elegir productos existentes en el catálogo.</div>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="entradaFecha" class="form-label">Fecha de entrada</label>
+                        <input type="date" class="form-control" id="entradaFecha" required>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="entradaCantidad" class="form-label">Cantidad recibida</label>
+                        <input type="number" class="form-control" id="entradaCantidad" min="1" step="1" required placeholder="Ej. 10">
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="entradaMotivo" class="form-label">Motivo u origen <span class="text-muted fw-normal">(opcional)</span></label>
+                        <input type="text" class="form-control" id="entradaMotivo" maxlength="180" placeholder="Ej. Compra a proveedor">
+                      </div>
+                    </div>
+                    <div class="movement-entry-summary" id="entradaResumen" aria-live="polite">
+                      <i class="fas fa-circle-info me-2" aria-hidden="true"></i><span>Selecciona un producto para consultar su existencia actual.</span>
+                    </div>
+                    <div class="d-grid gap-2 col-md-6 mx-auto mt-3">
+                      <button type="button" class="btn btn-success" id="registrarEntradaBtn">
+                        <i class="fas fa-check-circle me-1"></i> Registrar Entrada
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
               <!-- Historial de Movimientos Tab -->
               <div class="tab-pane fade" id="historial" role="tabpanel" aria-labelledby="historial-tab">
                 <div class="table-responsive">
@@ -541,6 +594,6 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module" src="./auth-guard.js?v=20260825-auth"></script>
-  <script type="module" src="./movimientos.js?v=20260825"></script>
+  <script type="module" src="./movimientos.js?v=20260826-movements"></script>
 </body>
 </html>
