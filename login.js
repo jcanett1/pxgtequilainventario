@@ -1,5 +1,9 @@
 import { supabase } from './supabase-client.js'
 
+const SLIDE_INTERVAL_MS = 5000
+let slideshowTimer = null
+let activeSlideIndex = 0
+
 const elements = {
   loginForm: document.getElementById('loginForm'),
   resetForm: document.getElementById('resetForm'),
@@ -14,6 +18,44 @@ const elements = {
   resetSubmit: document.getElementById('resetSubmit'),
   forgotPassword: document.getElementById('forgotPasswordBtn'),
   backToLogin: document.getElementById('backToLoginBtn')
+}
+
+function initializeLoginSlideshow() {
+  const slides = [...document.querySelectorAll('.login-slide')]
+  const dots = [...document.querySelectorAll('.login-slideshow-dot')]
+  if (slides.length <= 1) return
+
+  const setActiveSlide = (nextIndex) => {
+    activeSlideIndex = nextIndex
+    slides.forEach((slide, index) => slide.classList.toggle('is-active', index === activeSlideIndex))
+    dots.forEach((dot, index) => dot.classList.toggle('is-active', index === activeSlideIndex))
+  }
+
+  const stopSlideshow = () => {
+    if (slideshowTimer) {
+      window.clearInterval(slideshowTimer)
+      slideshowTimer = null
+    }
+  }
+
+  const startSlideshow = () => {
+    stopSlideshow()
+    slideshowTimer = window.setInterval(() => {
+      setActiveSlide((activeSlideIndex + 1) % slides.length)
+    }, SLIDE_INTERVAL_MS)
+  }
+
+  slides.forEach(slide => {
+    const image = slide.querySelector('img')
+    if (image) image.loading = 'eager'
+  })
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopSlideshow()
+    else startSlideshow()
+  })
+  window.addEventListener('pagehide', stopSlideshow, { once: true })
+  startSlideshow()
 }
 
 function getRedirectTarget() {
@@ -182,6 +224,7 @@ async function handlePasswordUpdate(event) {
 }
 
 async function initialize() {
+  initializeLoginSlideshow()
   bindPasswordToggles()
   elements.loginForm.addEventListener('submit', handleLogin)
   elements.resetForm.addEventListener('submit', handlePasswordUpdate)
