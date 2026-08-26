@@ -11,16 +11,16 @@ supabase login
 supabase link --project-ref bwkvfwrrlizhqdpaxfmb
 ```
 
-Configura el secreto de servidor en el proyecto. En la CLI actual se recomienda `SUPABASE_SECRET_KEY`; en proyectos que todavía utilizan el nombre anterior puedes usar `SUPABASE_SERVICE_ROLE_KEY`:
+En el panel web de Supabase, los nombres que empiezan por `SUPABASE_` están reservados para variables internas. Por eso crea un secreto personalizado llamado `PXG_ADMIN_SERVICE_ROLE_KEY`. La función también conserva compatibilidad con variables reservadas disponibles automáticamente en algunos proyectos:
 
 ```bash
-supabase secrets set SUPABASE_SECRET_KEY="TU_SECRET_KEY_DE_SUPABASE"
+supabase secrets set PXG_ADMIN_SERVICE_ROLE_KEY="TU_SECRET_KEY_PRIVADA_DE_SUPABASE"
 supabase functions deploy admin-users
 ```
 
 El gateway mantiene `verify_jwt = true` y la función vuelve a comprobar el JWT y el rol admin dentro de su código. El archivo `supabase/config.toml` deja declarada la misma política.
 
-> Nunca coloques `SUPABASE_SECRET_KEY` ni `SUPABASE_SERVICE_ROLE_KEY` en `supabase-client.js`, en GitHub Pages, en HTML, en JavaScript del navegador ni en un repositorio público.
+> Nunca coloques `PXG_ADMIN_SERVICE_ROLE_KEY`, `SUPABASE_SECRET_KEY` ni `SUPABASE_SERVICE_ROLE_KEY` en `supabase-client.js`, en GitHub Pages, en HTML, en JavaScript del navegador ni en un repositorio público. En el panel de Secrets sí puedes guardarlo como secreto cifrado; no necesitas compartirlo en el chat.
 
 ## 2. Convertir la primera cuenta en administrador
 
