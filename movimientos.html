@@ -14,11 +14,11 @@
   </script>
   <meta http-equiv="Access-Control-Allow-Origin" content="*">
   <title>Movimientos - PXG Tequila</title>
-  
+
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+
   <style id="app-style">
     :root {
       --primary-color: #8b0000;
@@ -26,27 +26,27 @@
       --accent-color: #ffb347;
       --dark-accent: #996633;
     }
-    
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f9f9f9;
       color: #333;
     }
-    
+
     .navbar {
       background-color: var(--primary-color) !important;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
-    
+
     .navbar-brand {
       font-weight: bold;
       font-size: 1.4rem;
     }
-    
+
     .navbar-brand img {
       margin-right: 10px;
     }
-    
+
     .card {
       border-radius: 10px;
       border: none;
@@ -54,11 +54,11 @@
       transition: transform 0.3s ease;
       margin-bottom: 1.5rem;
     }
-    
+
     .card:hover {
       transform: translateY(-5px);
     }
-    
+
     .card-header {
       background-color: #fff;
       border-bottom: 1px solid rgba(0, 0, 0, 0.08);
@@ -66,63 +66,63 @@
       border-top-left-radius: 10px !important;
       border-top-right-radius: 10px !important;
     }
-    
+
     .stats-card {
       text-align: center;
       padding: 1.5rem;
     }
-    
+
     .stats-card i {
       font-size: 2.5rem;
       margin-bottom: 1rem;
       color: var(--primary-color);
     }
-    
+
     .stats-value {
       font-size: 2rem;
       font-weight: bold;
       margin-bottom: 0.5rem;
     }
-    
+
     .stats-label {
       color: #666;
       text-transform: uppercase;
       font-size: 0.85rem;
       letter-spacing: 1px;
     }
-    
+
     .btn-primary {
       background-color: var(--primary-color);
       border-color: var(--primary-color);
     }
-    
+
     .btn-primary:hover {
       background-color: #750000;
       border-color: #750000;
     }
-    
+
     .table {
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
     }
-    
+
     .table thead {
       background-color: var(--primary-color);
       color: white;
     }
-    
+
     .table thead th {
       border-bottom: none;
       padding: 15px;
       font-weight: 600;
     }
-    
+
     .action-buttons .btn {
       padding: 0.25rem 0.5rem;
       margin: 0 0.15rem;
     }
-    
+
     .welcome-section {
       background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('pxg-logo-transparent-wide.png');
       background-size: cover;
@@ -133,12 +133,12 @@
       margin-bottom: 2rem;
       padding: 3rem;
     }
-    
+
     .modal-header {
       background-color: var(--primary-color);
       color: white;
     }
-    
+
     .footer {
       background-color: #2c2c2c;
       color: #f8f9fa;
@@ -150,21 +150,21 @@
       .stats-card {
         margin-bottom: 1rem;
       }
-      
+
       .welcome-section {
         padding: 1.5rem;
       }
     }
 
     /* Add stock level color classes */
-    .stock-low { 
-      background-color: rgba(255, 0, 0, 0.1) !important; 
+    .stock-low {
+      background-color: rgba(255, 0, 0, 0.1) !important;
     }
-    .stock-medium { 
-      background-color: rgba(255, 165, 0, 0.1) !important; 
+    .stock-medium {
+      background-color: rgba(255, 165, 0, 0.1) !important;
     }
-    .stock-high { 
-      background-color: rgba(0, 128, 0, 0.1) !important; 
+    .stock-high {
+      background-color: rgba(0, 128, 0, 0.1) !important;
     }
 
     /* Add dashboard specific styles */
@@ -174,27 +174,27 @@
       border-radius: 10px;
       transition: all 0.3s ease;
     }
-    
+
     .metrics-card:hover {
       transform: translateY(-5px);
     }
-    
+
     .metrics-card i {
       font-size: 2.5rem;
       margin-bottom: 1rem;
       color: var(--primary-color);
     }
-    
+
     .metrics-value {
       font-size: 2rem;
       font-weight: bold;
     }
-    
+
     .metrics-label {
       color: #666;
       font-size: 0.9rem;
     }
-    
+
     .chart-container {
       position: relative;
       height: 300px;
@@ -277,66 +277,73 @@
                 </button>
               </li>
             </ul>
-            
+
             <!-- Tab content -->
             <div class="tab-content" id="movimientosTabsContent">
               <!-- Salida de Productos Tab -->
               <div class="tab-pane fade show active" id="salida" role="tabpanel" aria-labelledby="salida-tab">
-                <div class="card mb-4">
-                  <div class="card-header bg-light">
-                    <h6 class="mb-0">Registrar Salida de Productos</h6>
+                <div class="movement-entry-card">
+                  <div class="movement-entry-intro">
+                    <div class="movement-entry-icon"><i class="fas fa-arrow-right-from-bracket" aria-hidden="true"></i></div>
+                    <div>
+                      <span class="movement-kicker">Salida de Productos</span>
+                      <h5 class="mb-1">Registrar salida de productos</h5>
+                      <p class="mb-0">Selecciona un producto registrado y especifica la cantidad que sale del inventario.</p>
+                    </div>
                   </div>
-                  <div class="card-body">
-                    <form id="salidaForm">
-                      <div class="row">
-                        <div class="col-md-6 mb-3">
-                          <label for="salidaProducto" class="form-label">Producto</label>
-                          <select class="form-select" id="salidaProducto" required>
-                            <option value="">Seleccionar producto</option>
-                            <!-- Opciones se cargarán dinámicamente -->
-                          </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                          <label for="salidaFecha" class="form-label">Fecha de salida</label>
-                          <input type="date" class="form-control" id="salidaFecha" required>
-                        </div>
+                  <form id="salidaForm" class="movement-entry-form">
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="salidaProducto" class="form-label">Producto registrado</label>
+                        <select class="form-select" id="salidaProducto" required>
+                          <option value="">Seleccionar producto</option>
+                          <!-- Opciones se cargarán dinámicamente -->
+                        </select>
+                        <div class="form-text">Solo puedes elegir productos existentes en el catálogo.</div>
                       </div>
-                      <div class="row">
-                        <div class="col-md-6 mb-3">
-                          <label for="salidaCantidad" class="form-label" id="salidaCantidadLabel">Cantidad</label>
-                          <input type="number" class="form-control" id="salidaCantidad" required min="1" step="1">
-                          <div class="form-text" id="salidaUnidadHint">Selecciona un producto para conocer la unidad.</div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                          <label for="salidaDestinatario" class="form-label">Persona destinataria</label>
-                          <select class="form-select" id="salidaDestinatario" required>
-                            <option value="">Seleccionar destinatario</option>
-                            <option value="Alan Ramos">Alan Ramos</option>
-                            <option value="Otton Morales">Otton Morales</option>
-                            <option value="Cinthya Leon">Cinthya Leon</option>
-                            <option value="Dennise Garcia">Dennise Garcia</option>
-                            <option value="Milagros Navarro">Milagros Navarro</option>
-                            <option value="Daina Sanchez">Daina Sanchez</option>
-                            <option value="Alejandra Lopez">Alejandra Lopez</option>
-                          </select>
-                        </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="salidaFecha" class="form-label">Fecha de salida</label>
+                        <input type="date" class="form-control" id="salidaFecha" required>
                       </div>
-                      <div class="row">
-                        <div class="col-12 mb-3">
-                          <label for="salidaMotivo" class="form-label">Motivo de salida</label>
-                          <input type="text" class="form-control" id="salidaMotivo" required>
-                        </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="salidaCantidad" class="form-label" id="salidaCantidadLabel">Cantidad</label>
+                        <input type="number" class="form-control" id="salidaCantidad" required min="1" step="1">
+                        <div class="form-text" id="salidaUnidadHint">Selecciona un producto para conocer la unidad.</div>
                       </div>
-                      <div class="d-grid gap-2 col-md-6 mx-auto">
-                        <button type="button" class="btn btn-primary" id="registrarSalidaBtn">
-                          <i class="fas fa-check-circle me-1"></i> Registrar Salida
-                        </button>
+                      <div class="col-md-6 mb-3">
+                        <label for="salidaDestinatario" class="form-label">Persona destinataria</label>
+                        <select class="form-select" id="salidaDestinatario" required>
+                          <option value="">Seleccionar destinatario</option>
+                          <option value="Alan Ramos">Alan Ramos</option>
+                          <option value="Otton Morales">Otton Morales</option>
+                          <option value="Cinthya Leon">Cinthya Leon</option>
+                          <option value="Dennise Garcia">Dennise Garcia</option>
+                          <option value="Milagros Navarro">Milagros Navarro</option>
+                          <option value="Daina Sanchez">Daina Sanchez</option>
+                          <option value="Alejandra Lopez">Alejandra Lopez</option>
+                        </select>
                       </div>
-                    </form>
-                  </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-12 mb-3">
+                        <label for="salidaMotivo" class="form-label">Motivo de salida</label>
+                        <input type="text" class="form-control" id="salidaMotivo" required>
+                      </div>
+                    </div>
+                    <div class="movement-entry-summary" id="salidaResumen" aria-live="polite">
+                      <i class="fas fa-circle-info me-2" aria-hidden="true"></i><span>Selecciona un producto para consultar su existencia actual.</span>
+                    </div>
+                    <div class="d-grid gap-2 col-md-6 mx-auto mt-3">
+                      <button type="button" class="btn btn-primary" id="registrarSalidaBtn">
+                        <i class="fas fa-check-circle me-1"></i> Registrar Salida
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
-              
+
               <!-- Entrada de Productos Tab -->
               <div class="tab-pane fade" id="entrada" role="tabpanel" aria-labelledby="entrada-tab">
                 <div class="movement-entry-card">
@@ -584,9 +591,9 @@
         </ul>
       </div>
     </div>
-    
+
     <hr class="mt-4 mb-3" style="border-color: rgba(255,255,255,0.1);">
-    
+
     <div class="text-center">
       <p class="small">© 2025 PXG. Todos los derechos reservados.</p>
     </div>
