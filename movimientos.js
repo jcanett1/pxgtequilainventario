@@ -27,10 +27,10 @@ async function initializeMovements() {
 }
 
 async function cargarProductos() {
-  const presentationFields = 'id, nombre, cantidad, tipo_presentacion, piezas_por_caja'
+  const presentationFields = 'id, nombre, cantidad, tipo_presentacion, piezas_por_caja, proveedor_id, proveedores:proveedor_id(id, nombre)'
   let response = await supabase.from('productos').select(presentationFields).order('nombre')
   if (response.error && /tipo_presentacion|piezas_por_caja|column/i.test(response.error.message || '')) {
-    response = await supabase.from('productos').select('id, nombre, cantidad').order('nombre')
+    response = await supabase.from('productos').select('id, nombre, cantidad, proveedor_id, proveedores:proveedor_id(id, nombre)').order('nombre')
   }
   if (response.error) throw response.error
   productosDisponibles = response.data || []
@@ -60,6 +60,7 @@ function actualizarResumenEntrada() {
     summary.className = 'movement-entry-summary'
     summary.innerHTML = '<i class="fas fa-circle-info me-2" aria-hidden="true"></i><span>Selecciona un producto para consultar su existencia actual.</span>'
     actualizarEtiquetaEntrada(null)
+    actualizarCampoProveedor(null)
     return
   }
 
@@ -67,6 +68,15 @@ function actualizarResumenEntrada() {
   summary.className = 'movement-entry-summary is-selected'
   summary.innerHTML = `<i class="fas fa-boxes-stacked me-2" aria-hidden="true"></i><span><strong>${escapeHtml(producto.nombre)}</strong> tiene actualmente <strong>${escapeHtml(formatProductStock(producto))}</strong>. La nueva entrada se sumará como ${presentation.type === 'caja' ? 'cajas completas' : 'piezas individuales'}.</span>`
   actualizarEtiquetaEntrada(producto)
+  actualizarCampoProveedor(producto)
+}
+
+function actualizarCampoProveedor(producto) {
+  const input = document.getElementById('entradaProveedor')
+  if (!input) return
+  const proveedorNombre = producto?.proveedores?.nombre || ''
+  input.value = proveedorNombre
+  input.placeholder = proveedorNombre ? '' : 'El producto no tiene proveedor registrado'
 }
 
 function actualizarEtiquetaEntrada(producto) {
@@ -111,15 +121,15 @@ function actualizarEtiquetasSalida() {
 async function cargarMovimientos() {
   let response = await supabase
     .from('movimientos')
-    .select('id, tipo, cantidad, motivo, destinatario, created_at, producto_id, usuario_id, productos:producto_id(id, nombre, tipo_presentacion, piezas_por_caja)')
+    .select('id, tipo, cantidad, motivo, destinatario, proveedor, created_at, producto_id, usuario_id, productos:producto_id(id, nombre, tipo_presentacion, piezas_por_caja)')
     .order('created_at', { ascending: false })
   if (response.error && /tipo_presentacion|piezas_por_caja/i.test(response.error.message || '')) {
     response = await supabase
       .from('movimientos')
-      .select('id, tipo, cantidad, motivo, destinatario, created_at, producto_id, usuario_id, productos:producto_id(id, nombre)')
+      .select('id, tipo, cantidad, motivo, destinatario, proveedor, created_at, producto_id, usuario_id, productos:producto_id(id, nombre)')
       .order('created_at', { ascending: false })
   }
-  const { data: movimientos, error } = response
+  const {  movimientos, error } = response
   if (error) throw error
 
   const tableBody = document.getElementById('movementsTableBody')
@@ -137,6 +147,7 @@ async function cargarMovimientos() {
         <td>${Number(movimiento.cantidad) || 0} ${formatMovementUnit(movimiento.productos || {}, movimiento.cantidad)}</td>
       <td>${escapeHtml(movimiento.motivo || '-')}</td>
       <td>${escapeHtml(movimiento.destinatario || '-')}</td>
+      <td>${escapeHtml(movimiento.proveedor || '-')}</td>
       <td>${escapeHtml(movimiento.usuario_id ? `${movimiento.usuario_id.slice(0, 8)}…` : 'Sistema')}</td>
       <td>${formatDate(movimiento.created_at, true)}</td>
     </tr>
@@ -198,6 +209,7 @@ async function registrarEntrada() {
   const productoId = document.getElementById('entradaProducto').value
   const cantidad = Number.parseInt(document.getElementById('entradaCantidad').value, 10)
   const motivo = document.getElementById('entradaMotivo').value.trim()
+  const proveedor = document.getElementById('entradaProveedor').value.trim() || null
   const producto = productosDisponibles.find(item => String(item.id) === String(productoId))
   const fecha = document.getElementById('entradaFecha').value
 
@@ -210,6 +222,7 @@ async function registrarEntrada() {
     tipo: 'entrada',
     cantidad,
     motivo: motivo || 'Entrada de inventario',
+    proveedor,
     createdAt: fecha ? `${fecha}T12:00:00` : undefined,
     onSuccess: async () => {
       await showToast(Swal, `Entrada registrada: ${cantidad} ${formatMovementUnit(producto, cantidad)} de ${producto.nombre}. El stock fue actualizado.`, 'success')
@@ -254,7 +267,7 @@ async function guardarMovimiento() {
   })
 }
 
-async function registrarMovimientoConStock({ productoId, tipo, cantidad, motivo, destinatario = null, createdAt, onSuccess }) {
+async function registrarMovimientoConStock({ productoId, tipo, cantidad, motivo, destinatario = null, proveedor = null, createdAt, onSuccess }) {
   Swal.fire({ title: 'Guardando movimiento...', allowOutsideClick: false, didOpen: () => Swal.showLoading() })
   let producto
   let updatedQuantity
@@ -268,7 +281,7 @@ async function registrarMovimientoConStock({ productoId, tipo, cantidad, motivo,
     updatedQuantity = currentQuantity + delta
     if (updatedQuantity < 0) throw new Error(`Stock insuficiente. Disponible: ${currentQuantity}`)
 
-    const { data: updated, error: updateError } = await supabase
+    const {  updated, error: updateError } = await supabase
       .from('productos')
       .update({ cantidad: updatedQuantity })
       .eq('id', productoId)
@@ -284,6 +297,7 @@ async function registrarMovimientoConStock({ productoId, tipo, cantidad, motivo,
       cantidad,
       motivo: motivo || null,
       destinatario,
+      proveedor,
       usuario_id: user?.id || null,
       ...(createdAt ? { created_at: createdAt } : {})
     })
