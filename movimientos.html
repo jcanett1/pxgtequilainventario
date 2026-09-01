@@ -372,11 +372,18 @@
                     </div>
                     <div class="row">
                       <div class="col-md-6 mb-3">
+                        <label for="entradaProveedor" class="form-label">Proveedor</label>
+                        <input type="text" class="form-control" id="entradaProveedor" readonly placeholder="Se completa automáticamente al seleccionar el producto">
+                        <div class="form-text">El proveedor se obtiene del registro del producto seleccionado.</div>
+                      </div>
+                      <div class="col-md-6 mb-3">
                         <label for="entradaCantidad" class="form-label" id="entradaCantidadLabel">Cantidad recibida</label>
                         <input type="number" class="form-control" id="entradaCantidad" min="1" step="1" required placeholder="Ej. 10">
                         <div class="form-text" id="entradaUnidadHint">Selecciona un producto para conocer si agregarás piezas o cajas.</div>
                       </div>
-                      <div class="col-md-6 mb-3">
+                    </div>
+                    <div class="row">
+                      <div class="col-12 mb-3">
                         <label for="entradaMotivo" class="form-label">Motivo u origen <span class="text-muted fw-normal">(opcional)</span></label>
                         <input type="text" class="form-control" id="entradaMotivo" maxlength="180" placeholder="Ej. Compra a proveedor">
                       </div>
@@ -404,6 +411,8 @@
                         <th>Tipo</th>
                         <th>Cantidad / unidad</th>
                         <th>Motivo</th>
+                        <th>Destinatario</th>
+                        <th>Proveedor</th>
                         <th>Usuario</th>
                         <th>Fecha</th>
                         <th>Acciones</th>
